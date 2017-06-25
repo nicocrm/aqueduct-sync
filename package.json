@@ -1,0 +1,23 @@
+{
+  "name": "aqueduct-sync",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicocrm/aqueduct-sync"
+  },
+  "version": "1.0.0",
+  "description": "An opinionated record synchronization library",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --harmony tests/**/*.spec.js -r ./tests/setup.js --recursive"
+  },
+  "author": "Nicolas Galler",
+  "license": "ISC",
+  "devDependencies": {
+    "chai": "^4.0.2",
+    "eslint": "^3.19.0",
+    "eslint-config-f1": "^1.0.3",
+    "mocha": "^3.4.2",
+    "sinon": "^2.3.5",
+    "sinon-chai": "^2.11.0"
+  }
+}
