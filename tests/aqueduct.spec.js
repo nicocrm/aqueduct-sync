@@ -1,10 +1,26 @@
+const Aqueduct = require('../lib/aqueduct')
+
 describe('aqueduct', () => {
-  it('calls get message from queue on schedule', () => {
-  })
+  describe('start', () => {
+    it('start sync schedule and checks for updates at interval', () => {
+      const q = {
+        get: sinon.stub().yields()
+      }
+      const a = new Aqueduct({}, {}, q, {})
+      a.start(10)
+      expect(a.syncSchedule).to.be.ok
+    })
 
-  it('adds pipe and calls checkForUpdates on schedule', () => {
-  })
-
-  it('adds pipe and calls create when create message on queue', () => {
+    it.skip('starts tap and checks for queue message at interval', (done) => {
+      const q = {
+        get: sinon.stub().yields()
+      }
+      const a = new Aqueduct({}, {}, q, {})
+      a.start(10)
+      setTimeout(() => {
+        expect(q.get).to.have.been.called
+        done()
+      }, 1000)
+    })
   })
 })

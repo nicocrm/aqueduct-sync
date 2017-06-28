@@ -30,11 +30,11 @@ of:
  * the local collection name
  * the remote collection name
  * the fields to be sent between the 2 systems (other fields will be removed from the output
- of the prepare function before sending the object on, and from the input of the cleanse 
+ of the prepare function before sending the object on, and from the input of the cleanse
  function)
  * the cleanse (from remote to local) and prepare (from local to remote) functions to be run
  when data is exchanged.  This can be straight mapping, or calculations.
- * relations between collections, which are to be maintained when records are imported from the 
+ * relations between collections, which are to be maintained when records are imported from the
  remote collection
 
 These pipes can be added individually or loaded from a folder of Javascript files.
@@ -48,12 +48,13 @@ const pipe = {
     // identifier (can also be an array of fields for a composite key)
     keyFields: 'ProjectNumber',
     // these are the remote fields we are interested in.
-    // any other field
+    // any other field will be discarded (the key fields are automatically included)
+    // remember to include the fields that are necessary to get the revision id
     fields: ['Name', 'EstimatedClose', 'Amount', 'EstimatedAmount', 'Probability'],
     // in cleanse, we can reference only fields that are listed in fields, but we can add
     // new fields as needed
     cleanse: rec => ({
-        ...rec, 
+        ...rec,
         Amount: rec.EstimatedAmount * rec.Probability,
         _calendarStartDate: min([rec.ProjectStartDate, rec.EstimatedStartDate])
     }),
@@ -87,30 +88,42 @@ service.find(...)
 
 ### Local Connection
 
-The collections on this connection implement:
+The collections on this connection must implement:
 
  * upsert(record, keyFields): create or update a record, based on the record key (or composite key)
  * relation operation (add / remove / update children?)  - TBD
 
 ### Remote Connection
 
-The collection on this connection implement:
+The collections on this connection must implement:
 
- * create(record) - create a single record.  Return the updated record, which will include the 
- generated key.  May throw an error if the record already exists.
- * update(record) - update a single record, based on the key (specific to the collection / connection).  Throw an error if the record does not exist.  This does a "hard" update (irrespective
- of sync state), the caller is expected to have managed sync conflicts already.
- * findUpdated(state) - retrieve records (as a stream of objects) that have been updated since 
- the given state
- * getIfUpdated(recordKey, syncState) - retrieve a single record, but only if it has been updated
- since the given state (null otherwise)
+ * create(record) - create a single record.  Return the updated record, which will include the generated key and the rev id.  May throw an error if the record already exists.
+ * update(record) - update a single record, based on the key (specific to the collection / connection).  Throw an error if the record does not exist.  Returns updated record.
+    - this does not have to do any conflict resolution here, because we'll handle it from the pipe
+ * get(recordKeyObject) - retrieve an existing record using the given selector (an object with the id populated).  Null if not found.
+ * getRevId(record) - retrieve the rev id for the record, used to identify updated records
+ * findUpdated(revId) - retrieve records (as a stream of objects) that have been updated since the given rev id
+ * compareRevId(record1, record2) - compare the rev id between the 2 records and return a value:
+    - smaller than 0, if record1 is smaller (older) than record2
+    - 0, if the 2 records have the same rev
+    - greater than 0, if record2 is higher (more recent) than record 2
 
 ## Sync State Storage
 
-This parameter is an object with methods for:
+This parameter is an object which must implement:
 
  * getSyncState(entity): retrieve the sync state for that entity (local name)
  * saveSyncState(entity, syncState)
 
 The sync state is an opaque object, that will be passed to the remote connection to determine
 records that need syncing.
+
+## Queue
+
+The queue object is an object which must implement this API:
+
+ * get(): return a promise that resolves to the next message in the queue, or undefined if no message is available
+     - this should automatically return messages to the queue if they are not acknowledged in a timely fashion, to ensure reliability
+ * ack(msg): acknowledge a message, removing it from the queue.  Return a promise that resolves to the message id (for logging)
+
+Note this API is a promisified version of a subset of methods from [mongodb-queue](https://github.com/chilts/mongodb-queue)
