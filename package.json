@@ -17,7 +17,9 @@
     "eslint": "^3.19.0",
     "eslint-config-f1": "^1.0.3",
     "mocha": "^3.4.2",
-    "sinon": "^2.3.5",
-    "sinon-chai": "^2.11.0"
+    "testdouble": "^3.2.1"
+  },
+  "dependencies": {
+    "ramda": "^0.24.1"
   }
 }

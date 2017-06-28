@@ -1,4 +1,5 @@
 const enhanceMethods = require('../lib/utils/enhanceMethods')
+const td = require('testdouble')
 
 describe('enhanceMethods', () => {
   it('returns original object', () => {
@@ -8,7 +9,7 @@ describe('enhanceMethods', () => {
   })
 
   it('calls original object method', () => {
-    const m = sinon.spy()
+    const m = td.function()
     const original = { m }
     const enhanced = enhanceMethods(original, {
       m(fn) {
@@ -16,11 +17,11 @@ describe('enhanceMethods', () => {
       }
     })
     enhanced.m()
-    expect(m).to.have.been.calledWith(123)
+    td.verify(m(123))
   })
 
   it('enhances multiple methods', () => {
-    const m = sinon.spy(), n = sinon.spy()
+    const m = td.function('m'), n = td.function('n')
     const original = { m, n }
     const enhanced = enhanceMethods(original, {
       m(fn) {
@@ -32,12 +33,12 @@ describe('enhanceMethods', () => {
     })
     enhanced.m()
     enhanced.n()
-    expect(m).to.have.been.calledWith(123)
-    expect(n).to.have.been.calledWith(456)
+    td.verify(m(123))
+    td.verify(n(456))
   })
 
   it('passes arguments from caller', () => {
-    const m = sinon.spy()
+    const m = td.function()
     const original = { m }
     const enhanced = enhanceMethods(original, {
       m(fn, a, b) {
@@ -46,7 +47,7 @@ describe('enhanceMethods', () => {
       }
     })
     enhanced.m('a', 'b')
-    expect(m).to.have.been.calledWith(123, 'a', 'b')
+    td.verify(m(123, 'a', 'b'))
   })
 
   it('calls methods in object scope', () => {

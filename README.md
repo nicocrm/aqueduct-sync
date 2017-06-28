@@ -60,6 +60,8 @@ const pipe = {
     }),
     // in prepare, we can reference all fields from the local source, but fields that are not
     // listed in fields will be removed
+    // this will be called for new records, even before they are actually inserted in the store,
+    // so it should not be an expensive operation (or it should be cached)
     prepare: rec => ({
         ...rec,
         EstimatedAmount: rec.Amount
@@ -90,7 +92,7 @@ service.find(...)
 
 The collections on this connection must implement:
 
- * upsert(record, keyFields): create or update a record, based on the record key (or composite key)
+ * upsert(record): create or update a record, based on the record key (or composite key)
  * relation operation (add / remove / update children?)  - TBD
 
 ### Remote Connection
@@ -101,6 +103,7 @@ The collections on this connection must implement:
  * update(record) - update a single record, based on the key (specific to the collection / connection).  Throw an error if the record does not exist.  Returns updated record.
     - this does not have to do any conflict resolution here, because we'll handle it from the pipe
  * get(recordKeyObject) - retrieve an existing record using the given selector (an object with the id populated).  Null if not found.
+    - the record may have additional properties populated beside the id
  * getRevId(record) - retrieve the rev id for the record, used to identify updated records
  * findUpdated(revId) - retrieve records (as a stream of objects) that have been updated since the given rev id
  * compareRevId(record1, record2) - compare the rev id between the 2 records and return a value:
