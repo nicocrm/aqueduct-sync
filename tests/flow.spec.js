@@ -32,7 +32,7 @@ describe('flow', () => {
     })
   })
 
-  it('reports errors from the stream', () => {
+  it.skip('reports errors from the stream', () => {
 
   })
 })
