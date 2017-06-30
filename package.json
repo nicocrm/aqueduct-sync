@@ -6,7 +6,7 @@
   },
   "version": "1.0.0",
   "description": "An opinionated record synchronization library",
-  "main": "index.js",
+  "main": "lib/aqueduct.js",
   "scripts": {
     "test": "mocha --harmony tests/**/*.spec.js -r ./tests/setup.js --recursive"
   },
