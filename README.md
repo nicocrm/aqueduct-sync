@@ -115,8 +115,8 @@ The collections on this connection must implement:
 
 This parameter is an object which must implement:
 
- * getSyncState(entity): retrieve the sync state for that entity (local name)
- * saveSyncState(entity, syncState)
+ * getSyncState(entity): retrieve a promise resolving to the sync state for that entity (local name)
+ * saveSyncState(entity, syncState): save the sync state for the entity (local name).  Return a promise
 
 The sync state is an opaque object, that will be passed to the remote connection to determine
 records that need syncing.

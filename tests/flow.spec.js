@@ -3,12 +3,14 @@ const td = require('testdouble')
 const {Readable} = require('stream')
 
 describe('flow', () => {
-  it('calls findUpdated on the remote connection', () => {
-    const findUpdated = td.function()
-    const upsert = td.function()
-    return flow(findUpdated, upsert, () => null, 60000).then(null, () => null).then(() => {
-      td.verify(findUpdated())
-    })
+  let logger
+
+  beforeEach(() => {
+    logger = {
+      debug: td.function('debug'),
+      error: td.function('error'),
+      info: td.function('info')
+    }
   })
 
   it('returns a promise that resolves when the stream is done reading', () => {
@@ -16,8 +18,8 @@ describe('flow', () => {
     const upsert = td.function()
     const fakeStream = new Readable({read: () => null, objectMode: true})
     fakeStream.push(null)
-    td.when(findUpdated()).thenReturn(fakeStream)
-    return flow(findUpdated, upsert, () => null, 60000)
+    td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
+    return flow(findUpdated, upsert, 60000, logger)
   })
 
   it('upserts records read from the stream', () => {
@@ -26,8 +28,8 @@ describe('flow', () => {
     const fakeStream = new Readable({read: () => null, objectMode: true})
     fakeStream.push('REMOTE')
     fakeStream.push(null)
-    td.when(findUpdated()).thenReturn(fakeStream)
-    return flow(findUpdated, upsert, 60000).then(() => {
+    td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
+    return flow(findUpdated, upsert, 60000, logger).then(() => {
       td.verify(upsert('REMOTE'))
     })
   })

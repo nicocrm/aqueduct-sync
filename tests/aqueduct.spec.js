@@ -37,7 +37,8 @@ describe('aqueduct', () => {
       const a = new Aqueduct(remote, local, q, syncState)
       a.addPipe(pipe)
       a.start()
-      td.verify(flow(td.matchers.isA(Function), td.matchers.isA(Function), td.matchers.isA(Number)))
+      td.verify(flow(td.matchers.isA(Function), td.matchers.isA(Function), td.matchers.isA(Number),
+        td.matchers.isA(Object)))
     })
 
     it('sync remote objects and updates sync state', (done) => {
@@ -57,7 +58,7 @@ describe('aqueduct', () => {
         getSyncState: td.function(),
         saveSyncState: td.function('saveSyncState')
       }
-      td.when(syncState.getSyncState('Local')).thenReturn(SYNC_STATE)
+      td.when(syncState.getSyncState('Local')).thenReturn(Promise.resolve(SYNC_STATE))
       const pipe = {
         remote: 'Remote',
         local: 'Local',
