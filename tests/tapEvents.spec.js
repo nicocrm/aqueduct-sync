@@ -1,13 +1,13 @@
 const td = require('testdouble')
-const tap = require('../lib/tap')
+const tapEvents = require('../lib/tapEvents')
 
-describe('Tap', () => {
+describe('TapEvents', () => {
   it('reads messages from queue', (done) => {
     const queue = {
       get: td.function()
     }
     td.when(queue.get()).thenDo(done)
-    tap(queue)
+    tapEvents(queue)
   })
 
   it('emits events using message metadata', (done) => {
@@ -18,7 +18,7 @@ describe('Tap', () => {
       type: 'Local', action: 'create'
     }
     td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
-    tap(queue).on('Local:create', incoming => {
+    tapEvents(queue).on('Local:create', incoming => {
       expect(incoming).to.equal(msg)
       done()
     })
