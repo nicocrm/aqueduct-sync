@@ -53,19 +53,28 @@ const pipe = {
     fields: ['Name', 'EstimatedClose', 'Amount', 'EstimatedAmount', 'Probability'],
     // in cleanse, we can reference only fields that are listed in fields, but we can add
     // new fields as needed
-    cleanse: rec => ({
+    // the localConnection parameter is the connection that was configured on the main aqueduct instance
+    // this can return a cleaned record or a promise to one
+    // the function will be invoked with the scope set to the pipe configuration object
+    cleanse: function(localConnection, rec) {
+      return {
         ...rec,
         Amount: rec.EstimatedAmount * rec.Probability,
         _calendarStartDate: min([rec.ProjectStartDate, rec.EstimatedStartDate])
-    }),
+      }
+    },
     // in prepare, we can reference all fields from the local source, but fields that are not
     // listed in fields will be removed
     // this will be called for new records, even before they are actually inserted in the store,
     // so it should not be an expensive operation (or it should be cached)
-    prepare: rec => ({
+    // it must return a record, not a promise
+    // the function will be invoked with the scope set to the pipe configuration object
+    prepare: function(rec) {
+      return {
         ...rec,
         EstimatedAmount: rec.Amount
-    }),
+      }
+    },
     // configuration of relationships to be maintained on the local collection (TODO)
     relations: [{
 
