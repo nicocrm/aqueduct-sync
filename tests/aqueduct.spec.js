@@ -65,7 +65,7 @@ describe('aqueduct', () => {
         cleanse: td.function(),
         fields: ['key']
       }
-      td.when(pipe.cleanse(REMOTE_OBJ)).thenReturn(Promise.resolve(LOCAL_OBJ))
+      td.when(pipe.cleanse(local, REMOTE_OBJ)).thenReturn(Promise.resolve(LOCAL_OBJ))
       td.when(local.Local.upsert(LOCAL_OBJ)).thenReturn(Promise.resolve())
       const a = new Aqueduct(remote, local, q, syncState)
       a.addPipe(pipe)
