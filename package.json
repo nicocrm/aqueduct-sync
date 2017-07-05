@@ -8,7 +8,8 @@
   "description": "An opinionated record synchronization library",
   "main": "lib/aqueduct.js",
   "scripts": {
-    "test": "mocha --harmony -r ./tests/setup.js --recursive tests"
+    "test": "mocha --harmony -r ./tests/setup.js --recursive tests",
+    "test:debug": "DEBUG=aqueduct:* mocha --harmony -r ./tests/setup.js --recursive tests"
   },
   "author": "Nicolas Galler",
   "license": "ISC",
