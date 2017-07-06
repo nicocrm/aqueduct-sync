@@ -24,6 +24,7 @@ describe('aqueduct', () => {
         get: td.function('get'),
         ack: td.function('ack')
       }
+      td.when(queue.get()).thenResolve(undefined)
     })
 
     it('does nothing, if there is no pipe', () => {
@@ -67,7 +68,7 @@ describe('aqueduct', () => {
         fields: ['key']
       }
       td.when(pipe.cleanse(local, REMOTE_OBJ)).thenReturn(Promise.resolve(LOCAL_OBJ))
-      td.when(local.Local.upsert(LOCAL_OBJ)).thenReturn(Promise.resolve())
+      td.when(local.Local.upsert(LOCAL_OBJ)).thenReturn(Promise.resolve({}))
       const a = new Aqueduct(remote, local, queue, syncState)
       a.addPipe(pipe)
       a.on(SyncEvents.SYNC_COMPLETE, (evt) => {
@@ -123,7 +124,7 @@ describe('aqueduct', () => {
         // td.verify(pipe.cleanse(local, {field: 'result from create'}))
         expect(rec).to.eql({field: 'cleansed result from create'})
         done()
-        return new Promise(() => null)
+        return new Promise(() => ({}))
       }
       const a = new Aqueduct(remote, local, queue, syncState)
       a.addPipe(pipe)
