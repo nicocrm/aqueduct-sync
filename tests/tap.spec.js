@@ -101,4 +101,25 @@ describe('Tap', () => {
       done()
     })
   })
+
+  it('does not ack message and log an error if there is an error', (done) => {
+    const events = new EventEmitter()
+    const pipe = {
+      local: 'Local',
+      cleanse: x => Promise.resolve(x),
+      prepare: x => x
+    }
+    const upsert = () => Promise.resolve()
+    const remote = { create: () => Promise.reject(new Error('err')) }
+    const msg = { data: 'foo' }
+    const ack = data => {
+      done('event should not be ack')
+    }
+    log.error = (err) => {
+      expect(err.message).to.equal('err')
+      done()
+    }
+    tap(events, pipe, upsert, remote, ack, log, syncEvents)
+    events.emit('Local:create', msg)
+  })
 })
