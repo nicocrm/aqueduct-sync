@@ -90,15 +90,16 @@ describe('aqueduct', () => {
         remote: 'Remote',
         local: 'Local',
         prepare: td.function(),
-        fields: []
+        fields: ['field']
       }
       const msg = { type: 'Local', action: 'create', data: 'bla bla bla' }
       td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
       td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
-      td.when(pipe.prepare('bla bla bla')).thenReturn('prepared data')
+      td.when(pipe.prepare('bla bla bla'))
+        .thenReturn({field: 'prepared data', other: 'something to discard'})
       local.Local.upsert = () => new Promise(() => null)
       remote.Remote.create = data => {
-        expect(data).to.equal('prepared data')
+        expect(data).to.eql({field: 'prepared data'})
         done()
         return new Promise(() => null)
       }
@@ -114,11 +115,11 @@ describe('aqueduct', () => {
         cleanse: td.function(),
         fields: ['field']
       }
-      const msg = { type: 'Local', action: 'create', data: 'bla bla bla' }
+      const msg = { type: 'Local', action: 'create', data: {field: 'bla bla bla', something_else: 'foo'} }
       // a promise that doesn't resolve so we don't try to pull stuff down
       td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
       td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
-      td.when(remote.Remote.create('bla bla bla')).thenResolve({field: 'result from create'})
+      td.when(remote.Remote.create({field: 'bla bla bla'})).thenResolve({field: 'result from create'})
       td.when(pipe.cleanse(local, {field: 'result from create'})).thenReturn({field: 'cleansed result from create'})
       local.Local.upsert = rec => {
         // td.verify(pipe.cleanse(local, {field: 'result from create'}))
