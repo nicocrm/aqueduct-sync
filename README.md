@@ -104,6 +104,7 @@ The collections on this connection must implement:
  * upsert(record, identifier): create or update a record, based on the record key (or composite key)
     - this can be a partial update: only the fields that are specified should be updated
     - the identifier will only be passed when the record originates from a local operation
+    - return a promise to an object with properties "inserted" and "updated" set to number of records affected respectively
  * relation operation (add / remove / update children?)  - TBD
 
 ### Remote Connection

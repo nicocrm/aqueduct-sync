@@ -70,14 +70,12 @@ describe('aqueduct', () => {
       td.when(local.Local.upsert(LOCAL_OBJ)).thenReturn(Promise.resolve())
       const a = new Aqueduct(remote, local, queue, syncState)
       a.addPipe(pipe)
-      a.on(SyncEvents.SYNC_COMPLETE, () => {
+      a.on(SyncEvents.SYNC_COMPLETE, (evt) => {
         td.verify(syncState.saveSyncState('Local', NEW_SYNC_STATE))
+        expect(evt.local).to.equal('Local')
         done()
       })
       a.start()
-    })
-
-    it.skip('emits flow event when a flow completes', (done) => {
     })
 
     it('starts tap and checks for queue message at interval', (done) => {

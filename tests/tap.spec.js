@@ -55,4 +55,7 @@ describe('Tap', () => {
     tap(events, pipe, upsert, create, ack, log)
     events.emit('Local:create', msg)
   })
+
+  it('emits created event', (done) => {
+  })
 })

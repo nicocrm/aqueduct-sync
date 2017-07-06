@@ -32,6 +32,8 @@ describe('flow', () => {
     fakeStream.push('REMOTE')
     fakeStream.push(null)
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
+    td.when(upsert('REMOTE')).thenResolve()
+    td.config({ignoreWarnings: true})
     flow(findUpdated, upsert, 60000, logger).on(SyncEvents.SYNC_COMPLETE, () => {
       td.verify(upsert('REMOTE'))
       done()
@@ -39,6 +41,10 @@ describe('flow', () => {
   })
 
   it.skip('reports errors from the stream', () => {
+
+  })
+
+  it.skip('reports errors from upsert', () => {
 
   })
 })
