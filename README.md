@@ -164,4 +164,19 @@ Note this API is a promisified version of a subset of methods from [mongodb-queu
 
 The aqueduct instance will emit the following events:
 
+ * `Aqueduct.SyncEvents.SYNC_COMPLETED`: a scheduled sync has completed (for the specified entity)
+ * `Aqueduct.SyncEvents.UPDATED`
+ * `Aqueduct.SyncEvents.CREATED`
+ * `Aqueduct.SyncEvents.DELETED`
 
+Events will have the following parameters:
+
+ * `local`: name of local entity
+ * `source`: "remote" or "local"
+ * `record`: record being synced (local version) - for the events that represent a single record
+
+These events can be automatically filtered, by passing a filter as first parameter when registering the event:
+
+```
+aq.on({source: 'remote'}, Aqueduct.SyncEvents.SYNC_COMPLETED, function() { ... })
+```
