@@ -101,10 +101,10 @@ service.find(...)
 
 The collections on this connection must implement:
 
- * upsert(record, identifier): create or update a record, based on the record key (or composite key)
+ * upsert(record): create or update a record, based on the record key (or composite key)
     - this can be a partial update: only the fields that are specified should be updated
-    - the identifier will only be passed when the record originates from a local operation
     - return a promise to an object with properties "inserted" and "updated" set to number of records affected respectively
+ * update(record, identifier): update a record using a local identifier
  * relation operation (add / remove / update children?)  - TBD
 
 ### Remote Connection
@@ -142,7 +142,7 @@ The queue object is an object which must implement this API:
      - this should automatically return messages to the queue if they are not acknowledged in a timely fashion, to ensure reliability
  * ack(msg): acknowledge a message, removing it from the queue.  Return a promise that resolves to the message id (for logging)
 
-The messages must be objects of the following format:
+The messages must be objects with a `payload` property of the following format:
 
  * action: create, update, delete
  * type: the local entity name

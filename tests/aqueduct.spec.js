@@ -18,6 +18,7 @@ describe('aqueduct', () => {
         getRevId: td.function('getRevId')
       } }
       local = { Local: {
+        update: td.function('update'),
         upsert: td.function('upsert')
       } }
       queue = {
@@ -43,6 +44,7 @@ describe('aqueduct', () => {
       const a = new Aqueduct(remote, local, queue, syncState)
       a.addPipe(pipe)
       a.start()
+      td.explain(flow).callCount.should.equal(1)
     })
 
     it('sync remote objects and updates sync state', (done) => {
@@ -92,7 +94,7 @@ describe('aqueduct', () => {
         prepare: td.function(),
         fields: ['field']
       }
-      const msg = { type: 'Local', action: 'create', data: 'bla bla bla' }
+      const msg = {payload: {type: 'Local', action: 'create', data: 'bla bla bla'}}
       td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
       td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
       td.when(pipe.prepare('bla bla bla'))
@@ -115,13 +117,13 @@ describe('aqueduct', () => {
         cleanse: td.function(),
         fields: ['field']
       }
-      const msg = { type: 'Local', action: 'create', data: {field: 'bla bla bla', something_else: 'foo'} }
+      const msg = {payload: {type: 'Local', action: 'create', data: {field: 'bla bla bla', something_else: 'foo'}}}
       // a promise that doesn't resolve so we don't try to pull stuff down
       td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
       td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
       td.when(remote.Remote.create({field: 'bla bla bla'})).thenResolve({field: 'result from create'})
       td.when(pipe.cleanse(local, {field: 'result from create'})).thenReturn({field: 'cleansed result from create'})
-      local.Local.upsert = rec => {
+      local.Local.update = (rec, id) => {
         // td.verify(pipe.cleanse(local, {field: 'result from create'}))
         expect(rec).to.eql({field: 'cleansed result from create'})
         done()

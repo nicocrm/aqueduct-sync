@@ -15,7 +15,9 @@ describe('TapEvents', () => {
       get: td.function()
     }
     const msg = {
-      type: 'Local', action: 'create'
+      payload: {
+        type: 'Local', action: 'create'
+      }
     }
     td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
     tapEvents(queue).on('Local:create', incoming => {

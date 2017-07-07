@@ -24,7 +24,7 @@ describe('Tap', () => {
     const remote = { create: td.function() }
     td.when(remote.create('foo')).thenResolve({})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
-    events.emit('Local:create', {data: 'foo'})
+    events.emit('Local:create', {payload: { data: 'foo' }})
     td.explain(remote.create).callCount.should.equal(1)
   })
 
@@ -40,11 +40,11 @@ describe('Tap', () => {
     const remote = { update: td.function() }
     td.when(remote.update('foo')).thenResolve({})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
-    events.emit('Local:update', {data: 'foo'})
+    events.emit('Local:update', {payload: { data: 'foo' }})
     td.explain(remote.update).callCount.should.equal(1)
   })
 
-  it('calls upsert with result of create', (done) => {
+  it('calls update with result of create', (done) => {
     const ack = () => Promise.resolve()
     const events = new EventEmitter()
     const pipe = {
@@ -52,15 +52,15 @@ describe('Tap', () => {
       cleanse: x => Promise.resolve(x),
       prepare: x => x
     }
-    const upsert = (data, id) => {
+    const update = (data, id) => {
       data.should.eql('result from create')
       expect(id, 'should pass identifier from message').to.be.ok.and.to.equal('id')
       done()
       return Promise.resolve()
     }
     const remote = { create: () => Promise.resolve('result from create') }
-    tap(events, pipe, upsert, remote, ack, log, syncEvents)
-    events.emit('Local:create', {data: 'foo', identifier: 'id'})
+    tap(events, pipe, update, remote, ack, log, syncEvents)
+    events.emit('Local:create', {payload: {data: 'foo', identifier: 'id'}})
   })
 
   it('calls ack with original message', (done) => {
@@ -72,7 +72,7 @@ describe('Tap', () => {
     }
     const upsert = () => Promise.resolve()
     const remote = { create: () => Promise.resolve() }
-    const msg = { data: 'foo' }
+    const msg = { payload: { data: 'foo' } }
     const ack = data => {
       expect(data).to.equal(msg)
       done()
@@ -95,7 +95,7 @@ describe('Tap', () => {
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
     const onCreated = td.function()
     syncEventsEmitter.on(SyncEvents.CREATED, onCreated)
-    events.emit('Local:create', {data: 'foo'})
+    events.emit('Local:create', {payload: {data: 'foo'}})
     setImmediate(() => {
       td.verify(onCreated({ record: {created: 1} }))
       done()
@@ -111,7 +111,7 @@ describe('Tap', () => {
     }
     const upsert = () => Promise.resolve()
     const remote = { create: () => Promise.reject(new Error('err')) }
-    const msg = { data: 'foo' }
+    const msg = { payload: { data: 'foo' } }
     const ack = data => {
       done('event should not be ack')
     }
