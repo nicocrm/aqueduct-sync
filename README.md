@@ -75,8 +75,9 @@ const pipe = {
         EstimatedAmount: rec.Amount
       }
     },
-    // configuration of relationships to be maintained on the local collection (TODO)
-    relations: [{
+    // configuration of relationships to be maintained on the local collection
+    // (this is handled by aqueduct-pipe-joints but not directly in aqueduct-sync)
+    joints: [{
 
     }]
 }
@@ -105,7 +106,15 @@ The collections on this connection must implement:
     - this can be a partial update: only the fields that are specified should be updated
     - return a promise to an object with properties "inserted" and "updated" set to number of records affected respectively
  * update(record, identifier): update a record using a local identifier
- * relation operation (add / remove / update children?)  - TBD
+    - local identifier can be either the id passed with a local update message, or a selection query (an object of field: value), or it can be blank (in which case the selector should be extracted from the record)
+    - this can update multiple records
+
+Additionally if joints are used the following operations will be needed:
+
+ * get(recordSelector): retrieve a single record
+ * find(recordSelector): retrieve an array of records (this is expected to be used with a limited number of records)
+ * addOrUpdateChildInCollection
+ * removeChildFromCollection
 
 ### Remote Connection
 
@@ -150,3 +159,9 @@ The messages must be objects with a `payload` property of the following format:
  * identifier: a local record identifier that will be passed to the upsert call
 
 Note this API is a promisified version of a subset of methods from [mongodb-queue](https://github.com/chilts/mongodb-queue)
+
+## Events
+
+The aqueduct instance will emit the following events:
+
+

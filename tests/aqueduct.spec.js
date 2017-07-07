@@ -19,7 +19,8 @@ describe('aqueduct', () => {
       } }
       local = { Local: {
         update: td.function('update'),
-        upsert: td.function('upsert')
+        upsert: td.function('upsert'),
+        getKeyField: () => 'Id'
       } }
       queue = {
         get: td.function('get'),
@@ -132,6 +133,30 @@ describe('aqueduct', () => {
       const a = new Aqueduct(remote, local, queue, syncState)
       a.addPipe(pipe)
       a.start()
+    })
+
+    it('builds joints and enhance the cleanse function', () => {
+      local.OtherLocal = {
+        getKeyField: () => 'Id',
+        get: () => Promise.resolve({id: 'my parent', name: 'Something'})
+      }
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        cleanse: null,
+        fields: ['field', 'lookup'],
+        joints: [
+          { lookupField: 'lookup', parentFieldName: 'parent', parentFields: ['id', 'name'], parentEntity: 'OtherLocal' }
+        ]
+      }
+      // a promise that doesn't resolve so we don't try to pull stuff down
+      td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
+      const a = new Aqueduct(remote, local, queue, syncState)
+      a.addPipe(pipe)
+      a.start()
+      return a.pipes[0].cleanse({lookup: 'testing'}).then(x => {
+        expect(x).to.eql({lookup: 'testing', parent: { id: 'my parent', name: 'Something' }})
+      })
     })
   })
 })

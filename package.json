@@ -21,6 +21,7 @@
     "testdouble": "^3.2.1"
   },
   "dependencies": {
+    "aqueduct-pipe-joints": "github:nicocrm/aqueduct-pipe-joints",
     "debug": "^2.6.8",
     "ramda": "^0.24.1"
   }
