@@ -158,5 +158,37 @@ describe('aqueduct', () => {
         expect(x).to.eql({lookup: 'testing', parent: { id: 'my parent', name: 'Something' }})
       })
     })
+
+    it('calls enhanced cleanse function when there is a joint', (done) => {
+      local.OtherLocal = {
+        getKeyField: () => 'Id',
+        get: () => Promise.resolve({id: 'my parent', name: 'Something'})
+      }
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        cleanse: null,
+        fields: ['field', 'lookup'],
+        joints: [
+          { lookupField: 'lookup', parentFieldName: 'parent', parentFields: ['id', 'name'], parentEntity: 'OtherLocal' }
+        ]
+      }
+      const fakeStream = new Readable({read: () => null, objectMode: true})
+      fakeStream.push({lookup: '123'})
+      fakeStream.push(null)
+      remote.Remote.findUpdated = () => Promise.resolve(fakeStream)
+      syncState.getSyncState = () => Promise.resolve(123)
+      syncState.saveSyncState = () => Promise.resolve()
+      local.Local.upsert = record => {
+        expect(record).to.eql({
+          lookup: '123', parent: { id: 'my parent', name: 'Something' }
+        })
+        done()
+        return Promise.resolve({})
+      }
+      const a = new Aqueduct(remote, local, queue, syncState)
+      a.addPipe(pipe)
+      a.start()
+    })
   })
 })
