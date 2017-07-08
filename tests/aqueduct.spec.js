@@ -191,4 +191,83 @@ describe('aqueduct', () => {
       a.start()
     })
   })
+
+  describe('cleanse', () => {
+    it('makes cleanse into a promise returning function', () => {
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        cleanse: (_, x) => x,
+        fields: ['key']
+      }
+      const a = new Aqueduct()
+      a.addPipe(pipe)
+      return a.pipes[0].cleanse({key: 'something'}).then(result => {
+        expect(result).to.be.ok
+      })
+    })
+
+    it('invokes the original cleanse function and uses result', () => {
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        cleanse: () => {
+          return {key: 'something new'}
+        },
+        fields: ['key']
+      }
+      const a = new Aqueduct()
+      a.addPipe(pipe)
+      return a.pipes[0].cleanse({key: 'something'}).then(result => {
+        expect(result).to.eql({key: 'something new'})
+      })
+    })
+
+    it('works with function returning a promise', () => {
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        cleanse: () => {
+          return new Promise((resolve) => {
+            setImmediate(resolve({key: 'something new'}))
+          })
+        },
+        fields: ['key']
+      }
+      const a = new Aqueduct()
+      a.addPipe(pipe)
+      return a.pipes[0].cleanse({key: 'something'}).then(result => {
+        expect(result).to.eql({key: 'something new'})
+      })
+    })
+
+    it('picks specified fields', () => {
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        cleanse: null,
+        fields: ['key']
+      }
+      const a = new Aqueduct()
+      a.addPipe(pipe)
+      return a.pipes[0].cleanse({key: 'something', other: 'stuff'}).then(result => {
+        expect(result).to.eql({key: 'something'})
+      })
+    })
+
+    it('uses field map to enhance cleanse method', () => {
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        cleanse: null,
+        fields: ['key'],
+        map: {key: 'newkey'}
+      }
+      const a = new Aqueduct()
+      a.addPipe(pipe)
+      return a.pipes[0].cleanse({key: 'something'}).then(result => {
+        expect(result).to.eql({newkey: 'something'})
+      })
+    })
+  })
 })

@@ -50,6 +50,7 @@ const pipe = {
     // these are the remote fields we are interested in.
     // any other field will be discarded (the key fields are automatically included)
     // remember to include the fields that are necessary to get the revision id
+    // if there is a map, these fields need to refer to the REMOTE name, not the local (mapped) name
     fields: ['Name', 'EstimatedClose', 'Amount', 'EstimatedAmount', 'Probability'],
     // in cleanse, we can reference only fields that are listed in fields, but we can add
     // new fields as needed
@@ -65,6 +66,7 @@ const pipe = {
     },
     // in prepare, we can reference all fields from the local source, but fields that are not
     // listed in fields will be removed
+    // the record will have the "unmapped" (local) names
     // this will be called for new records, even before they are actually inserted in the store,
     // so it should not be an expensive operation (or it should be cached)
     // it must return a record, not a promise
@@ -74,6 +76,11 @@ const pipe = {
         ...rec,
         EstimatedAmount: rec.Amount
       }
+    },
+    // optional mapping of remote -> local field
+    // this mapping will be performed BEFORE the cleanse function and AFTER the prepare function
+    map: {
+      RemoteField: 'Local Name'
     },
     // configuration of relationships to be maintained on the local collection
     // (this is handled by aqueduct-pipe-joints but not directly in aqueduct-sync)
