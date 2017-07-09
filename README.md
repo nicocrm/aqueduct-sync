@@ -53,7 +53,7 @@ const pipe = {
     // if there is a map, these fields need to refer to the REMOTE name, not the local (mapped) name
     fields: ['Name', 'EstimatedClose', 'Amount', 'EstimatedAmount', 'Probability'],
     // in cleanse, we can reference only fields that are listed in fields, but we can add
-    // new fields as needed
+    // new fields as needed (in other word cleansing happens AFTER picking)
     // the localConnection parameter is the connection that was configured on the main aqueduct instance
     // this can return a cleaned record or a promise to one
     // the function will be invoked with the scope set to the pipe configuration object
