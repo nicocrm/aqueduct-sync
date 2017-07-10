@@ -70,7 +70,7 @@ describe('aqueduct', () => {
         cleanse: td.function(),
         fields: ['key']
       }
-      td.when(pipe.cleanse(local, REMOTE_OBJ)).thenReturn(Promise.resolve(LOCAL_OBJ))
+      td.when(pipe.cleanse(REMOTE_OBJ, local)).thenReturn(Promise.resolve(LOCAL_OBJ))
       td.when(local.Local.upsert(LOCAL_OBJ)).thenReturn(Promise.resolve({}))
       const a = new Aqueduct(remote, local, queue, syncState)
       a.addPipe(pipe)
@@ -123,7 +123,7 @@ describe('aqueduct', () => {
       td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
       td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
       td.when(remote.Remote.create({field: 'bla bla bla'})).thenResolve({field: 'result from create'})
-      td.when(pipe.cleanse(local, {field: 'result from create'})).thenReturn({field: 'cleansed result from create'})
+      td.when(pipe.cleanse({field: 'result from create'}, local)).thenReturn({field: 'cleansed result from create'})
       local.Local.update = (rec, id) => {
         // td.verify(pipe.cleanse(local, {field: 'result from create'}))
         expect(rec).to.eql({field: 'cleansed result from create'})
@@ -197,7 +197,7 @@ describe('aqueduct', () => {
       const pipe = {
         remote: 'Remote',
         local: 'Local',
-        cleanse: (_, x) => x,
+        cleanse: (x) => x,
         fields: ['key']
       }
       const a = new Aqueduct()

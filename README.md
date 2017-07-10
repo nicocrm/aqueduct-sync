@@ -57,7 +57,7 @@ const pipe = {
     // the localConnection parameter is the connection that was configured on the main aqueduct instance
     // this can return a cleaned record or a promise to one
     // the function will be invoked with the scope set to the pipe configuration object
-    cleanse: function(localConnection, rec) {
+    cleanse: function(rec, localConnection) {
       return {
         ...rec,
         Amount: rec.EstimatedAmount * rec.Probability,
