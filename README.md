@@ -72,6 +72,10 @@ const pipe = {
     // it must return a record, not a promise
     // the function will be invoked with the scope set to the pipe configuration object
     // action will be "insert" or "update"
+    // when this is called for an update, the data will contain only the values that are being
+    // modified as part of that update
+    // The result will be merged with the existing record, retrieved from the remote, before being
+    // finally sent to the remote update method
     prepare: function(rec, action) {
       return {
         ...rec,

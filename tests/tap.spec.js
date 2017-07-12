@@ -12,7 +12,7 @@ describe('Tap', () => {
     syncEvents = new SyncEvents(syncEventsEmitter)
   })
 
-  it('handles create events', () => {
+  it('handles create events', (done) => {
     const ack = () => Promise.resolve()
     const events = new EventEmitter()
     const pipe = {
@@ -25,10 +25,13 @@ describe('Tap', () => {
     td.when(remote.create('foo')).thenResolve({})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
     events.emit('Local:create', {payload: { data: 'foo' }})
-    td.explain(remote.create).callCount.should.equal(1)
+    setImmediate(() => {
+      td.explain(remote.create).callCount.should.equal(1)
+      done()
+    })
   })
 
-  it('handles update events', () => {
+  it('handles update events', (done) => {
     const ack = () => Promise.resolve()
     const events = new EventEmitter()
     const pipe = {
@@ -37,11 +40,15 @@ describe('Tap', () => {
       prepare: x => x
     }
     const upsert = () => Promise.resolve()
-    const remote = { update: td.function() }
-    td.when(remote.update('foo')).thenResolve({})
+    const remote = { update: td.function(), get: td.function() }
+    td.when(remote.update({field: 'foo', existing: '2'})).thenResolve({})
+    td.when(remote.get({field: 'foo'})).thenResolve({existing: '2'})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
-    events.emit('Local:update', {payload: { data: 'foo' }})
-    td.explain(remote.update).callCount.should.equal(1)
+    events.emit('Local:update', {payload: { data: {field: 'foo'} }})
+    setImmediate(() => {
+      td.explain(remote.update).callCount.should.equal(1)
+      done()
+    })
   })
 
   it('calls update with result of create', (done) => {
