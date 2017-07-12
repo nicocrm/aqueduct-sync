@@ -71,7 +71,8 @@ const pipe = {
     // so it should not be an expensive operation (or it should be cached)
     // it must return a record, not a promise
     // the function will be invoked with the scope set to the pipe configuration object
-    prepare: function(rec) {
+    // action will be "insert" or "update"
+    prepare: function(rec, action) {
       return {
         ...rec,
         EstimatedAmount: rec.Amount
@@ -112,7 +113,7 @@ The collections on this connection must implement:
  * upsert(record): create or update a record, based on the record key (or composite key)
     - this can be a partial update: only the fields that are specified should be updated
     - return a promise to an object with properties "inserted" and "updated" set to number of records affected respectively
- * update(record, identifier): update a record using a local identifier
+ * update(record, identifierOrQuery): update a record using a local identifier
     - local identifier can be either the id passed with a local update message, or a selection query (an object of field: value), or it can be blank (in which case the selector should be extracted from the record)
     - this can update multiple records
 
