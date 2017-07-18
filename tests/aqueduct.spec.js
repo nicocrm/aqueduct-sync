@@ -98,8 +98,32 @@ describe('aqueduct', () => {
       const msg = {payload: {type: 'Local', action: 'create', data: 'bla bla bla'}}
       td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
       td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
-      td.when(pipe.prepare('bla bla bla', 'insert'))
+      td.when(pipe.prepare('bla bla bla', 'insert', local))
         .thenReturn({field: 'prepared data', other: 'something to discard'})
+      local.Local.upsert = () => new Promise(() => null)
+      remote.Remote.create = data => {
+      // td.verify(pipe.prepare('bla bla bla', 'insert', local))
+        expect(data).to.eql({field: 'prepared data'})
+        done()
+        return new Promise(() => null)
+      }
+      const a = new Aqueduct(remote, local, queue, syncState)
+      a.addPipe(pipe)
+      a.start()
+    })
+
+    it('calls prepare and resolve promise when creating records', (done) => {
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        prepare: td.function(),
+        fields: ['field']
+      }
+      const msg = {payload: {type: 'Local', action: 'create', data: 'bla bla bla'}}
+      td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
+      td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
+      td.when(pipe.prepare('bla bla bla', 'insert', local))
+        .thenResolve({field: 'prepared data', other: 'something to discard'})
       local.Local.upsert = () => new Promise(() => null)
       remote.Remote.create = data => {
         expect(data).to.eql({field: 'prepared data'})

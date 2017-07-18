@@ -33,7 +33,8 @@ of:
  of the prepare function before sending the object on, and from the input of the cleanse
  function)
  * the cleanse (from remote to local) and prepare (from local to remote) functions to be run
- when data is exchanged.  This can be straight mapping, or calculations.
+ when data is exchanged.  This can be straight mapping, or calculations (but for simple mapping,
+ better use the map property instead)
  * relations between collections, which are to be maintained when records are imported from the
  remote collection
 
@@ -53,7 +54,7 @@ const pipe = {
     // if there is a map, these fields need to refer to the REMOTE name, not the local (mapped) name
     fields: ['Name', 'EstimatedClose', 'Amount', 'EstimatedAmount', 'Probability'],
     // in cleanse, we can reference only fields that are listed in fields, but we can add
-    // new fields as needed (in other word cleansing happens AFTER picking)
+    // new fields as needed (in other word cleansing happens AFTER picking/mapping)
     // the localConnection parameter is the connection that was configured on the main aqueduct instance
     // this can return a cleaned record or a promise to one
     // the function will be invoked with the scope set to the pipe configuration object
@@ -66,17 +67,15 @@ const pipe = {
     },
     // in prepare, we can reference all fields from the local source, but fields that are not
     // listed in fields will be removed
-    // the record will have the "unmapped" (local) names
-    // this will be called for new records, even before they are actually inserted in the store,
-    // so it should not be an expensive operation (or it should be cached)
-    // it must return a record, not a promise
+    // the record will have the "unmapped" (local) names: prepare happens BEFORE picking/mapping
+    // it can return a cleaned record or a promise to one
     // the function will be invoked with the scope set to the pipe configuration object
     // action will be "insert" or "update"
     // when this is called for an update, the data will contain only the values that are being
     // modified as part of that update
     // The result will be merged with the existing record, retrieved from the remote, before being
     // finally sent to the remote update method
-    prepare: function(rec, action) {
+    prepare: function(rec, action, localConnection) {
       return {
         ...rec,
         EstimatedAmount: rec.Amount

@@ -31,7 +31,7 @@ describe('Tap', () => {
     })
   })
 
-  it('handles update events', (done) => {
+  it('handles update events and merge existing data', (done) => {
     const ack = () => Promise.resolve()
     const events = new EventEmitter()
     const pipe = {
@@ -41,14 +41,51 @@ describe('Tap', () => {
     }
     const upsert = () => Promise.resolve()
     const remote = { update: td.function(), get: td.function() }
-    td.when(remote.update({field: 'foo', existing: '2'})).thenResolve({})
+    remote.update = rec => {
+      rec.should.eql({field: 'foo', existing: '2'})
+      done()
+      return Promise.resolve({})
+    }
     td.when(remote.get({field: 'foo'})).thenResolve({existing: '2'})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
     events.emit('Local:update', {payload: { data: {field: 'foo'} }})
-    setImmediate(() => {
-      td.explain(remote.update).callCount.should.equal(1)
+  })
+
+  it('resolve promise from prepare when updating records', (done) => {
+    const ack = () => Promise.resolve()
+    const events = new EventEmitter()
+    const pipe = {
+      local: 'Local',
+      cleanse: x => Promise.resolve(x),
+      prepare: x => Promise.resolve({...x, prepared: 'x'})
+    }
+    const upsert = () => Promise.resolve()
+    const remote = { update: td.function(), get: () => Promise.resolve({existing: '2'}) }
+    remote.update = rec => {
+      rec.should.eql({field: 'foo', existing: '2', prepared: 'x'})
       done()
-    })
+      return Promise.resolve({})
+    }
+    tap(events, pipe, upsert, remote, ack, log, syncEvents)
+    events.emit('Local:update', {payload: { data: {field: 'foo'} }})
+  })
+
+  it('uses cleanse when merging results from remote', (done) => {
+    const ack = () => Promise.resolve()
+    const events = new EventEmitter()
+    const pipe = {
+      local: 'Local',
+      cleanse: x => Promise.resolve({...x, cleansed: 'x'}),
+      prepare: x => x
+    }
+    const remote = { update: x => Promise.resolve(x), get: () => Promise.resolve({existing: '2'}) }
+    const upsert = rec => {
+      rec.should.eql({field: 'foo', existing: '2', cleansed: 'x'})
+      done()
+      return Promise.resolve({})
+    }
+    tap(events, pipe, upsert, remote, ack, log, syncEvents)
+    events.emit('Local:update', {payload: { data: {field: 'foo'} }})
   })
 
   it('calls update with result of create', (done) => {
