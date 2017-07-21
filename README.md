@@ -75,6 +75,8 @@ const pipe = {
     // modified as part of that update
     // The result will be merged with the existing record, retrieved from the remote, before being
     // finally sent to the remote update method
+    // To cancel an update, throw an Error (the update will be reattempted)
+    //   TODO: a way to cancel an update permanently.
     prepare: function(rec, action, localConnection) {
       return {
         ...rec,
