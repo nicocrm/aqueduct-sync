@@ -7,6 +7,18 @@ describe('aqueduct', () => {
   describe('start', () => {
     let syncState, remote, local, queue
 
+    const localCollection = definition => ({
+      update: td.function('update'),
+      upsert: td.function('upsert'),
+      find: td.function('find'),
+      get: td.function('get'),
+      addOrUpdateChildInCollection: td.function(),
+      removeChildFromCollection: td.function(),
+      getKeyField: () => 'Id',
+      getLocalKeyField: () => '_id',
+      ...definition
+    })
+
     beforeEach(() => {
       syncState = {
         getSyncState: td.function('getSyncState'),
@@ -17,11 +29,7 @@ describe('aqueduct', () => {
         findUpdated: td.function('findUpdated'),
         getRevId: td.function('getRevId')
       } }
-      local = { Local: {
-        update: td.function('update'),
-        upsert: td.function('upsert'),
-        getKeyField: () => 'Id'
-      } }
+      local = { Local: localCollection({}) }
       queue = {
         get: td.function('get'),
         ack: td.function('ack')
@@ -102,7 +110,7 @@ describe('aqueduct', () => {
         .thenReturn({field: 'prepared data', other: 'something to discard'})
       local.Local.upsert = () => new Promise(() => null)
       remote.Remote.create = data => {
-      // td.verify(pipe.prepare('bla bla bla', 'insert', local))
+        // td.verify(pipe.prepare('bla bla bla', 'insert', local))
         expect(data).to.eql({field: 'prepared data'})
         done()
         return new Promise(() => null)
@@ -160,10 +168,10 @@ describe('aqueduct', () => {
     })
 
     it('builds joints and enhance the cleanse function', () => {
-      local.OtherLocal = {
+      local.OtherLocal = localCollection({
         getKeyField: () => 'Id',
         get: () => Promise.resolve({id: 'my parent', name: 'Something'})
-      }
+      })
       const pipe = {
         remote: 'Remote',
         local: 'Local',
@@ -184,10 +192,10 @@ describe('aqueduct', () => {
     })
 
     it('calls enhanced cleanse function when there is a joint', (done) => {
-      local.OtherLocal = {
+      local.OtherLocal = localCollection({
         getKeyField: () => 'Id',
         get: () => Promise.resolve({id: 'my parent', name: 'Something'})
-      }
+      })
       const pipe = {
         remote: 'Remote',
         local: 'Local',
