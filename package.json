@@ -4,7 +4,7 @@
     "type": "git",
     "url": "git+https://github.com/nicocrm/aqueduct-sync"
   },
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "An opinionated record synchronization library",
   "main": "lib/aqueduct.js",
   "scripts": {
@@ -22,7 +22,7 @@
     "testdouble": "^3.2.1"
   },
   "dependencies": {
-    "aqueduct-pipe-joints": "^1.0.4",
+    "aqueduct-pipe-joints": "^1.0.13",
     "debug": "^2.6.8",
     "ramda": "^0.24.1"
   }
