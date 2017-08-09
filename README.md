@@ -46,6 +46,8 @@ const pipe = {
     local: 'Projects',
     // name of remote collection
     remote: 'Opportunity',
+    // optional arguments that will be passed to the remote `findUpdated` method
+    findArgs: null,  
     // identifier (can also be an array of fields for a composite key)
     keyFields: 'ProjectNumber',
     // these are the remote fields we are interested in.
