@@ -47,7 +47,7 @@ const pipe = {
     // name of remote collection
     remote: 'Opportunity',
     // optional arguments that will be passed to the remote `findUpdated` method
-    findArgs: null,  
+    findArgs: null,
     // identifier (can also be an array of fields for a composite key)
     keyFields: 'ProjectNumber',
     // these are the remote fields we are interested in.
@@ -195,3 +195,23 @@ These events can be automatically filtered, by passing a filter as first paramet
 ```
 aq.on({source: 'remote'}, Aqueduct.SyncEvents.SYNC_COMPLETED, function() { ... })
 ```
+
+## Logging
+
+Use `DEBUG=aqueduct:*` to enable debugging output.
+
+By default the module will log error and information to the console, but it is possible to customize by using the `setLogger` method to pass a custom logger object:
+
+```
+aqueduct.setLogger(myLogger)
+```
+
+The custom logger must have `info` and `error` methods.  By default the debugging output will still be filtered by the DEBUG environment variable and sent to the console (using the `debug` npm module), but if desired the debug logger can be set with:
+
+```
+aqueduct.setLogger(myLogger, true)
+```
+
+In which case, `myLogger` must have a `debug` method.
+
+Setting the logger only has an effect when it is done before pipes have been added.
