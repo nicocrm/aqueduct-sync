@@ -29,7 +29,7 @@ of:
 
  * the local collection name
  * the remote collection name
- * the fields to be sent between the 2 systems (other fields will be removed from the output
+ * the fields to be sent between the 2 systems (other fields will be removed from the output) - this can be ommitted, to send and keep all the fields
  of the prepare function before sending the object on, and from the input of the cleanse
  function)
  * the cleanse (from remote to local) and prepare (from local to remote) functions to be run
