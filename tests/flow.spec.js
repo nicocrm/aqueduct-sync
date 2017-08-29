@@ -40,8 +40,21 @@ describe('flow', () => {
     })
   })
 
-  it.skip('reports errors from the stream', () => {
-
+  it('reports errors from the stream', (done) => {
+    // we need to be able to handle the case where the stream reports an error
+    const findUpdated = td.function()
+    const upsert = td.function()
+    const fakeStream = new Readable({read: () => null, objectMode: true})
+    td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
+    td.config({ignoreWarnings: true})
+    flow(findUpdated, upsert, 60000, logger).on(SyncEvents.SYNC_COMPLETE, () => {
+      td.verify(logger.error("Error reading records", td.matchers.contains({message: "AAAA"})))
+      done()
+    })
+    setTimeout(function() {
+      fakeStream.emit('error', new Error('AAAA'))
+      fakeStream.push(null)
+    })
   })
 
   it.skip('reports errors from upsert', () => {
