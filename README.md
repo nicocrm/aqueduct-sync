@@ -90,10 +90,22 @@ const pipe = {
     map: {
       RemoteField: 'Local Name'
     },
-    // configuration of relationships to be maintained on the local collection
+    // configuration of relationships (M-1) to be maintained on the local collection
     // (this is handled by aqueduct-pipe-joints but not directly in aqueduct-sync)
     joints: [{
-
+      // the field, on the local entity, where to store the parent record reference
+      // this will be stored as an object
+      parentFieldName: '',
+      // what fields to store for the parent record (optional, if not provided we just keep the key)
+      parentFields: [''],
+      // the field, on the local entity, that refers to a parent
+      lookupField: '',
+      // what entity (local name) this refers to
+      parentEntity: '',
+      // field on the Parent entity where we would like to store a collection of children
+      relatedListName: '',
+      // what fields to store for each child (the key is added automatically)
+      relatedListFields: ['']
     }]
 }
 aqueduct.addPipe(pipe)
