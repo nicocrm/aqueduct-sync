@@ -135,6 +135,7 @@ The collections on this connection must implement:
  * update(record, identifierOrQuery): update a record using a local identifier
     - local identifier can be either the id passed with a local update message, or a selection query (an object of field: value), or it can be blank (in which case the selector should be extracted from the record)
     - this can update multiple records
+    - this can be a partial update
 
 Additionally if joints are used the following operations will be needed:
 
@@ -147,12 +148,11 @@ Additionally if joints are used the following operations will be needed:
 
 The collections on this connection must implement:
 
- * create(record) - create a single record.  Return the updated record, which will include the generated key and the rev id.  May throw an error if the record already exists.
- * update(record) - update a single record, based on the key (specific to the collection / connection).  Throw an error if the record does not exist.  Returns updated record.
+ * create(record, metadata) - create a single record.  Return the updated record, which will include the generated key and the rev id.  May throw an error if the record already exists.
+ * update(record, metadata) - update a single record, based on the key (specific to the collection / connection).  Throw an error if the record does not exist.  Returns updated record.
     - this does not have to do any conflict resolution here, because we'll handle it from the pipe
- * remove(record) - remove a record, based on the key
- * get(recordKeyObject) - retrieve an existing record using the given selector (an object with the id populated).  Null if not found.
-    - the record may have additional properties populated beside the id
+    - this can be a partial update, so if it is necessary for the remote API to have the full record they will need to retrieve it (e.g. as part of the `prepare` step)
+ * remove(record, metadata) - remove a record, based on the key
  * getRevId(record) - retrieve the rev id for the record, used to identify updated records
  * findUpdated(revId) - retrieve records (as a stream of objects) that have been updated since the given rev id
  * compareRevId(record1, record2) - compare the rev id between the 2 records and return a value:
@@ -180,10 +180,11 @@ The queue object is an object which must implement this API:
 
 The messages must be objects with a `payload` property of the following format:
 
- * action: create, update, delete
- * type: the local entity name
- * data: the record data.  For an update this should be partial data, including only the fields that were changed.
- * identifier: a local record identifier that will be passed to the upsert call
+ * `action`: create, update, delete (delete is NOT implemented at this time)
+ * `type`: the local entity name
+ * `data`: the record data.  For an update this should be partial data, including only the fields that were changed.
+ * `identifier`: a local record identifier that will be passed to the upsert call
+ * `meta`: optional metadata that will be passed unmodified to the create, update or remove method
 
 Note this API is a promisified version of a subset of methods from [mongodb-queue](https://github.com/chilts/mongodb-queue)
 

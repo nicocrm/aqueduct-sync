@@ -12,7 +12,7 @@ describe('Tap', () => {
     syncEvents = new SyncEvents(syncEventsEmitter)
   })
 
-  it('handles create events', (done) => {
+  it('handles create events, passes metadata', (done) => {
     const ack = () => Promise.resolve()
     const events = new EventEmitter()
     const pipe = {
@@ -22,16 +22,17 @@ describe('Tap', () => {
     }
     const upsert = () => Promise.resolve()
     const remote = { create: td.function() }
-    td.when(remote.create('foo')).thenResolve({})
+    td.when(remote.create('foo', 'testmeta')).thenResolve({})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
-    events.emit('Local:create', {payload: { data: 'foo' }})
+    events.emit('Local:create', {payload: { data: 'foo', meta: 'testmeta'}})
     setImmediate(() => {
-      td.explain(remote.create).callCount.should.equal(1)
+      td.config({ignoreWarnings: true})
+      td.verify(remote.create('foo', 'testmeta'))
       done()
     })
   })
 
-  it('handles update events and merge existing data', (done) => {
+  it('handles update events, does not merge existing data, passes metadata', (done) => {
     const ack = () => Promise.resolve()
     const events = new EventEmitter()
     const pipe = {
@@ -40,15 +41,15 @@ describe('Tap', () => {
       prepare: x => x
     }
     const upsert = () => Promise.resolve()
-    const remote = { update: td.function(), get: td.function() }
-    remote.update = rec => {
-      rec.should.eql({field: 'foo', existing: '2'})
+    const remote = { update: td.function() }
+    remote.update = (rec, meta) => {
+      rec.should.eql({field: 'foo'})
+      meta.should.eql('testmeta')
       done()
       return Promise.resolve({})
     }
-    td.when(remote.get({field: 'foo'})).thenResolve({existing: '2'})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
-    events.emit('Local:update', {payload: { data: {field: 'foo'} }})
+    events.emit('Local:update', {payload: { data: {field: 'foo'}, meta: 'testmeta' }})
   })
 
   it('resolve promise from prepare when updating records', (done) => {
@@ -60,9 +61,9 @@ describe('Tap', () => {
       prepare: x => Promise.resolve({...x, prepared: 'x'})
     }
     const upsert = () => Promise.resolve()
-    const remote = { update: td.function(), get: () => Promise.resolve({existing: '2'}) }
+    const remote = { update: td.function() }
     remote.update = rec => {
-      rec.should.eql({field: 'foo', existing: '2', prepared: 'x'})
+      rec.should.eql({field: 'foo', prepared: 'x'})
       done()
       return Promise.resolve({})
     }
@@ -78,9 +79,9 @@ describe('Tap', () => {
       cleanse: x => Promise.resolve({...x, cleansed: 'x'}),
       prepare: x => x
     }
-    const remote = { update: x => Promise.resolve(x), get: () => Promise.resolve({existing: '2'}) }
+    const remote = { update: x => Promise.resolve(x) }
     const upsert = rec => {
-      rec.should.eql({field: 'foo', existing: '2', cleansed: 'x'})
+      rec.should.eql({field: 'foo', cleansed: 'x'})
       done()
       return Promise.resolve({})
     }
@@ -135,7 +136,7 @@ describe('Tap', () => {
     }
     const upsert = () => Promise.resolve()
     const remote = { create: td.function() }
-    td.when(remote.create('foo')).thenResolve({created: 1})
+    td.when(remote.create('foo', undefined)).thenResolve({created: 1})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
     const onCreated = td.function()
     syncEventsEmitter.on(SyncEvents.CREATED, onCreated)
