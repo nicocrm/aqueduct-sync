@@ -61,13 +61,18 @@ describe('aqueduct', () => {
       const NEW_SYNC_STATE = 'new-sync-state'
       const REMOTE_OBJ = { key: 'remote' }
       const LOCAL_OBJ = { key: 'local' }
-      const FIND_ARGS = {}
+      const FIND_ARGS = { arg: 'something' }
 
       const fakeStream = new Readable({read: () => null, objectMode: true})
       fakeStream.push(REMOTE_OBJ)
       fakeStream.push(null)
       td.when(remote.Remote.findUpdated(SYNC_STATE, FIND_ARGS)).thenReturn(fakeStream)
-      td.when(remote.Remote.getRevId(REMOTE_OBJ)).thenReturn(NEW_SYNC_STATE)
+      remote.Remote.getRevId = (remoteObj, findArgs) => {
+        expect(remoteObj).to.eql(REMOTE_OBJ)
+        expect(findArgs).to.eql(FIND_ARGS)
+        return NEW_SYNC_STATE
+      }
+      // td.when(remote.Remote.getRevId(REMOTE_OBJ, FIND_ARGS)).thenReturn(NEW_SYNC_STATE)
       const syncState = {
         getSyncState: td.function(),
         saveSyncState: td.function('saveSyncState')
