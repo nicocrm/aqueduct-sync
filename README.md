@@ -87,6 +87,7 @@ const pipe = {
     },
     // optional mapping of remote -> local field
     // this mapping will be performed BEFORE the cleanse function and AFTER the prepare function
+    // it is not currently able to read "paths", only simple properties
     map: {
       RemoteField: 'Local Name'
     },
