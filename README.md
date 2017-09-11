@@ -53,10 +53,8 @@ const pipe = {
     remote: 'Opportunity',
     // optional arguments that will be passed to the remote `findUpdated` method
     findArgs: null,
-    // identifier (can also be an array of fields for a composite key)
-    keyFields: 'ProjectNumber',
-    // these are the remote fields we are interested in.
-    // any other field will be discarded (the key fields are automatically included)
+    // these are the remote fields we are interested in, leave unspecified to keep all fields
+    // any other field will be discarded
     // remember to include the fields that are necessary to get the revision id
     // if there is a map, these fields need to refer to the REMOTE name, not the local (mapped) name
     fields: ['Name', 'EstimatedClose', 'Amount', 'EstimatedAmount', 'Probability'],
@@ -137,13 +135,14 @@ service.find(...)
 
 The collections on this connection must implement:
 
- * upsert(record): create or update a record, based on the record key (or composite key)
+ * `upsert(record)`: create or update a record, based on the record key (or composite key)
     - this can be a partial update: only the fields that are specified should be updated
-    - return a promise to an object with properties "inserted" and "updated" set to number of records affected respectively
- * update(record, identifierOrQuery): update a record using a local identifier
+    - return a promise to an object with properties "inserted" and "updated" set to number of records affected respectively (these are used to trigger the events about the sync status)
+ * `update(record, identifierOrQuery)`: update a record using a local identifier
     - local identifier can be either the id passed with a local update message, or a selection query (an object of field: value), or it can be blank (in which case the selector should be extracted from the record)
     - this can update multiple records
     - this can be a partial update
+    - return a promise that resolves when the update completes (the resolved value is not used)
 
 Additionally if joints are used the following operations will be needed:
 
@@ -236,3 +235,7 @@ aqueduct.setLogger(myLogger, true)
 In which case, `myLogger` must have a `debug` method.
 
 Setting the logger only has an effect when it is done before pipes have been added.
+
+## TODO
+
+ * Being able to specify the interval as a CRON-type schedule string instead
