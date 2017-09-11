@@ -19,8 +19,13 @@ operations to be synced from the local to the remote).
 ```
 const aqueduct = new Aqueduct(localConnection, remoteConnection, queue, syncStateStorage)
 aqueduct.addPipe(...)
-aqueduct.flow()
+aqueduct.start()
 ```
+
+Methods:
+
+ * `start`: start the scheduled syncs (both in and out)
+ * `runFlow(localName)`: request a sync of the specified (inbound) flow.  Returns false if the flow could not be found, true otherwise.  Note that even if the flow is found, the sync may not run if it is already in process.
 
 ## Pipes
 
@@ -107,7 +112,9 @@ const pipe = {
       relatedListName: '',
       // what fields to store for each child (the key is added automatically)
       relatedListFields: ['']
-    }]
+    }],
+    // this defaults to true, but can be set to false to skip initially running the pipe
+    runAtStartup: true
 }
 aqueduct.addPipe(pipe)
 ```

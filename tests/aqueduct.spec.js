@@ -48,7 +48,7 @@ describe('aqueduct', () => {
 
       const on = td.function('on')
       td.when(flow(td.matchers.isA(Function), td.matchers.isA(Function), td.matchers.isA(Number),
-        td.matchers.isA(Object))).thenReturn({on})
+        td.matchers.isA(Object), true)).thenReturn({on})
       const pipe = { local: 'Local', remote: 'Remote', cleanse: td.function() }
       const a = new Aqueduct(remote, local, queue, syncState)
       a.addPipe(pipe)
