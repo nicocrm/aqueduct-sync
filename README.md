@@ -35,11 +35,8 @@ of:
  * the local collection name
  * the remote collection name
  * the fields to be sent between the 2 systems (other fields will be removed from the output) - this can be ommitted, to send and keep all the fields
- of the prepare function before sending the object on, and from the input of the cleanse
- function)
- * the cleanse (from remote to local) and prepare (from local to remote) functions to be run
- when data is exchanged.  This can be straight mapping, or calculations (but for simple mapping,
- better use the map property instead)
+ of the prepare function before sending the object on, and from the input of the cleanse function)
+ * the cleanse (from remote to local) and prepare (from local to remote) functions to be run when data is exchanged.  This can be straight mapping, or calculations (but for simple mapping, better use the map property instead).  If the cleanse method does not return an object, then the record is not inserted (but the sync state is still updated).  This allows for custom skipping logic.
  * relations between collections, which are to be maintained when records are imported from the
  remote collection
 
@@ -61,7 +58,7 @@ const pipe = {
     // in cleanse, we can reference only fields that are listed in fields, but we can add
     // new fields as needed (in other word cleansing happens AFTER picking/mapping)
     // the localConnection parameter is the connection that was configured on the main aqueduct instance
-    // this can return a cleaned record or a promise to one
+    // this can return a cleaned record or a promise to one (or false, to cancel)
     // the function will be invoked with the scope set to the pipe configuration object
     cleanse: function(rec, localConnection) {
       return {
