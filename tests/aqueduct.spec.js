@@ -46,14 +46,77 @@ describe('aqueduct', () => {
       const flow = td.replace('../lib/flow'),
         Aqueduct = require('../lib/aqueduct')
 
-      const on = td.function('on')
-      td.when(flow(td.matchers.isA(Function), td.matchers.isA(Function), td.matchers.isA(Number),
-        td.matchers.isA(Object), true)).thenReturn({on})
+      const on = () => ({on})
+      td.when(flow(td.matchers.contains({
+        runNow: true
+      }))).thenReturn({on})
       const pipe = { local: 'Local', remote: 'Remote', cleanse: td.function() }
       const a = new Aqueduct(remote, local, queue, syncState)
       a.addPipe(pipe)
       a.start()
       td.explain(flow).callCount.should.equal(1)
+    })
+
+    it('builds faucet (and flow for the faucet) when configured', () => {
+      const flow = td.replace('../lib/flow'),
+        faucet = td.replace('../lib/faucet'),
+        Aqueduct = require('../lib/aqueduct')
+
+      const on = () => ({on})
+      td.when(flow(td.matchers.anything())).thenReturn({on})
+      const config = {
+        remote: 'Remote',
+        onRecord: () => '',
+        name: 'foo'
+      }
+      const a = new Aqueduct(remote, local, queue, syncState)
+      a.addFaucet(config)
+      a.start()
+      td.verify(faucet(td.matchers.argThat(arg => {
+        expect(arg).to.have.property('flow').that.has.property('on')
+        expect(arg).to.have.property('runFlow').that.is.a('function')
+        return true
+      })))
+    })
+
+    it('calls faucet onRecord and updates sync state', (done) => {
+      const SYNC_STATE = 'sync-state'
+      const NEW_SYNC_STATE = 'new-sync-state'
+      const REMOTE_OBJ = { key: 'remote' }
+      const LOCAL_OBJ = { key: 'local' }
+      const FIND_ARGS = { arg: 'something' }
+
+      const fakeStream = new Readable({read: () => null, objectMode: true})
+      fakeStream.push(REMOTE_OBJ)
+      fakeStream.push(null)
+      td.when(remote.Remote.findUpdated(SYNC_STATE, FIND_ARGS)).thenReturn(fakeStream)
+      remote.Remote.getRevId = (remoteObj, findArgs) => {
+        expect(remoteObj).to.eql(REMOTE_OBJ)
+        expect(findArgs).to.eql(FIND_ARGS)
+        return NEW_SYNC_STATE
+      }
+      // td.when(remote.Remote.getRevId(REMOTE_OBJ, FIND_ARGS)).thenReturn(NEW_SYNC_STATE)
+      const syncState = {
+        getSyncState: td.function(),
+        saveSyncState: td.function('saveSyncState')
+      }
+      td.when(syncState.getSyncState('Local')).thenReturn(Promise.resolve(SYNC_STATE))
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        findArgs: FIND_ARGS,
+        onRecord: td.function('onRecord')
+      }
+      local.Local.upsert = () => { throw new Error('should not call here') }
+      const a = new Aqueduct(remote, local, queue, syncState)
+      a.addFaucet(pipe)
+      a.on(SyncEvents.SYNC_COMPLETE, (evt) => {
+        td.verify(pipe.onRecord(local, REMOTE_OBJ))
+        td.verify(syncState.saveSyncState('Local', NEW_SYNC_STATE))
+        expect(evt.local).to.equal('Local')
+        done()
+      })
+      a.start()
     })
 
     it('sync remote objects and updates sync state', (done) => {

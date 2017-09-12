@@ -25,7 +25,10 @@ aqueduct.start()
 Methods:
 
  * `start`: start the scheduled syncs (both in and out)
- * `runFlow(localName)`: request a sync of the specified (inbound) flow.  Returns false if the flow could not be found, true otherwise.  Note that even if the flow is found, the sync may not run if it is already in process.
+ * `addPipe`: add a pipe to the configuration.  The pipe will only be started once `start` is called.
+ * `addFaucet`: add a faucet to the configuration.  It will only be started once `start` is called.
+ * `runFlow(localName)`: request a sync of the specified (inbound) flow.  Returns false if the flow could not be found, true otherwise.  Note that even if the flow is found, the sync may not run if it is already in process.  This can only be called after `start` has been called.
+
 
 ## Pipes
 
@@ -41,6 +44,7 @@ of:
  remote collection
 
 These pipes can be added individually or loaded from a folder of Javascript files.
+All the pipes must be added before calling the `start` method.
 
 ```
 const pipe = {
@@ -108,10 +112,40 @@ const pipe = {
       // what fields to store for each child (the key is added automatically)
       relatedListFields: ['']
     }],
+    // optional interval in ms (defaults to 5 minutes)
+    interval: 60000,
     // this defaults to true, but can be set to false to skip initially running the pipe
     runAtStartup: true
 }
 aqueduct.addPipe(pipe)
+```
+
+## Faucet
+
+A faucet is a simpler version of a pipe, it is used to check for records but without importing them into the system (and it is unidirectional - there is no local to remote side of the sync).  For example this can be used to run a sync that deletes some records based on a given condition, or detect some changes that will trigger an on-demand sync.
+
+```
+const faucet = {
+  // optional interval in ms (defaults to 5 minutes)
+  interval: 60000,
+  // this defaults to true, but can be set to false to skip initially running the pipe
+  runAtStartup: true
+  // identifier for the sync state, and used in log messages
+  // this does not need to be a valid local connection
+  local: 'MyFaucet',
+  // name of remote collection to be checked
+  remote: 'Remote Name',
+  // optional arguments for findUpdated
+  findArgs: {
+  },
+  onRecord: function(localConnection, record) {
+    // take action with the received record.
+    // if this function returns a string, it will be interpreted as the name
+    // of a pipe to run the flow (inbound sync) for
+    // a given pipe will be triggered only once per invocation of the faucet
+  }
+}
+aqueduct.addFaucet(faucet)
 ```
 
 ## Connections
@@ -197,9 +231,11 @@ Note this API is a promisified version of a subset of methods from [mongodb-queu
 The aqueduct instance will emit the following events:
 
  * `Aqueduct.SyncEvents.SYNC_COMPLETED`: a scheduled sync has completed (for the specified entity)
+ * `Aqueduct.SyncEvents.SYNC_START`: a scheduled sync has started (for the specified entity)
  * `Aqueduct.SyncEvents.UPDATED`
  * `Aqueduct.SyncEvents.CREATED`
  * `Aqueduct.SyncEvents.DELETED`
+ * `Aqueduct.SyncEvents.UPSERT_RESULT`: a record was upserted - will be provided the result from the upsert function as a `result` property
 
 Events will have the following parameters:
 

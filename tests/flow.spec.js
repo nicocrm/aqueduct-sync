@@ -15,14 +15,18 @@ describe('flow', () => {
   })
 
   it('returns an event emitter that emits flow event when the flow runs', (done) => {
+    let started = false
     const findUpdated = td.function()
     const upsert = td.function()
     const fakeStream = new Readable({read: () => null, objectMode: true})
     fakeStream.push(null)
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
-    flow(findUpdated, upsert, 60000, logger).on(SyncEvents.SYNC_COMPLETE, () => {
-      done()
-    })
+    flow({findUpdated, upsert, interval: 60000, logger})
+      .on(SyncEvents.SYNC_START, () => { started = true })
+      .on(SyncEvents.SYNC_COMPLETE, () => {
+        expect(started).to.equal(true)
+        done()
+      })
   })
 
   it('upserts records read from the stream', (done) => {
@@ -34,7 +38,7 @@ describe('flow', () => {
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
     td.when(upsert('REMOTE')).thenResolve()
     td.config({ignoreWarnings: true})
-    flow(findUpdated, upsert, 60000, logger).on(SyncEvents.SYNC_COMPLETE, () => {
+    flow({findUpdated, upsert, interval: 60000, logger}).on(SyncEvents.SYNC_COMPLETE, () => {
       td.verify(upsert('REMOTE'))
       done()
     })
@@ -47,14 +51,15 @@ describe('flow', () => {
     const fakeStream = new Readable({read: () => null, objectMode: true})
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
     td.config({ignoreWarnings: true})
-    flow(findUpdated, upsert, 60000, logger).on(SyncEvents.SYNC_COMPLETE, () => {
+    flow({findUpdated, upsert, interval: 60000, logger}).on(SyncEvents.SYNC_COMPLETE, () => {
       td.verify(logger.error("Error reading records", td.matchers.contains({message: "AAAA"})))
       done()
     })
+    // need a little timeout, because the flow will run the sync using setImmediate
     setTimeout(function() {
       fakeStream.emit('error', new Error('AAAA'))
       fakeStream.push(null)
-    })
+    }, 10)
   })
 
   it('reports errors from upsert', (done) => {
@@ -66,7 +71,7 @@ describe('flow', () => {
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
     td.when(upsert('REMOTE')).thenReject(new Error('AAAA'))
     td.config({ignoreWarnings: true})
-    flow(findUpdated, upsert, 60000, logger).on(SyncEvents.SYNC_COMPLETE, () => {
+    flow({findUpdated, upsert, interval: 60000, logger}).on(SyncEvents.SYNC_COMPLETE, () => {
       td.verify(logger.error("Error upserting record", td.matchers.contains({message: "AAAA"})))
       done()
     })
@@ -83,7 +88,7 @@ describe('flow', () => {
     }
     td.config({ignoreWarnings: true})
     let numRun = 0
-    const myFlow = flow(findUpdated, upsert, 60000, logger).on(SyncEvents.SYNC_COMPLETE, () => {
+    const myFlow = flow({findUpdated, upsert, interval: 60000, logger}).on(SyncEvents.SYNC_COMPLETE, () => {
       numRun++
       if(numRun == 2) {
         done()
@@ -100,7 +105,7 @@ describe('flow', () => {
       throw new Error('Should not run sync!')
     }
     const upsert = () => null
-    flow(findUpdated, upsert, 60000, logger, false)
+    flow({findUpdated, upsert, interval: 60000, logger, runNow: false})
     setTimeout(done, 50)
   })
 
@@ -113,7 +118,7 @@ describe('flow', () => {
       return new Promise(() => null)
     }
     const upsert = () => null
-    const myFlow = flow(findUpdated, upsert, 60000, logger, true)
+    const myFlow = flow({findUpdated, upsert, interval: 60000, logger, runNow: true})
     setTimeout(() => {
       myFlow.emit(SyncEvents.SYNC_START)
     }, 50)
@@ -133,7 +138,7 @@ describe('flow', () => {
       return Promise.resolve(fakeStream)
     }
     const upsert = () => null
-    const myFlow = flow(findUpdated, upsert, 50, logger, true)
+    const myFlow = flow({findUpdated, upsert, interval: 50, logger, runNow: true})
   })
 
   it('runs sync at scheduled interval, when not running at start', (done) => {
@@ -149,7 +154,7 @@ describe('flow', () => {
       return Promise.resolve(fakeStream)
     }
     const upsert = () => null
-    const myFlow = flow(findUpdated, upsert, 50, logger, false)
+    const myFlow = flow({findUpdated, upsert, interval: 50, logger, runNow: false})
   })
 
 })
