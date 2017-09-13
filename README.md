@@ -103,7 +103,7 @@ const pipe = {
       parentFieldName: '',
       // what fields to store for the parent record (optional, if not provided we just keep the key)
       parentFields: [''],
-      // the field, on the local entity, that refers to a parent
+      // the field, on the local entity, that refers to a parent (this may be a period-separated path)
       lookupField: '',
       // what entity (local name) this refers to
       parentEntity: '',
