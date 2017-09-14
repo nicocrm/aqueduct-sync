@@ -140,9 +140,9 @@ describe('Tap', () => {
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
     const onCreated = td.function()
     syncEventsEmitter.on(SyncEvents.CREATED, onCreated)
-    events.emit('Local:create', {payload: {data: 'foo'}})
+    events.emit('Local:create', {payload: {data: 'foo', identifier: '123'}})
     setImmediate(() => {
-      td.verify(onCreated({ record: {created: 1} }))
+      td.verify(onCreated({ record: {created: 1}, identifier: '123' }))
       done()
     })
   })

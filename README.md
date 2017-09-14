@@ -241,12 +241,16 @@ Events will have the following parameters:
 
  * `local`: name of local entity
  * `source`: "remote" or "local"
- * `record`: record being synced (local version) - for the events that represent a single record
+ * `record`: record being synced (local 'cleaned' version) - for the events that represent a single record.  This is only the data - it does not include the local identifier (because that one will usually be removed by the cleaning process)
+ * `identifier`: local identifier for the record
 
 These events can be automatically filtered, by passing a filter as first parameter when registering the event:
 
 ```
+// a function to run when a flow completes
 aq.on({source: 'remote'}, Aqueduct.SyncEvents.SYNC_COMPLETED, function() { ... })
+// a function to run when a ticket was synced from the local collection
+aq.on({local: 'Tickets', source: 'local'}, Aqueduct.SyncEvents.CREATED, function() { ... })
 ```
 
 ## Logging
