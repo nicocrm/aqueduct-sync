@@ -126,7 +126,7 @@ describe('Tap', () => {
     events.emit('Local:create', msg)
   })
 
-  it('emits created event', (done) => {
+  it('emits created event, with data from remote and local identifier', (done) => {
     const ack = () => Promise.resolve()
     const events = new EventEmitter()
     const pipe = {
