@@ -136,13 +136,44 @@ describe('Tap', () => {
     }
     const upsert = () => Promise.resolve()
     const remote = { create: td.function() }
-    td.when(remote.create('foo', undefined)).thenResolve({created: 1})
+    td.when(remote.create({something: 'foo'}, undefined)).thenResolve({created: 1})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
     const onCreated = td.function()
     syncEventsEmitter.on(SyncEvents.CREATED, onCreated)
-    events.emit('Local:create', {payload: {data: 'foo', identifier: '123'}})
+    events.emit('Local:create', {payload: {data: {
+      something: 'foo'
+    }, identifier: '123'}})
     setImmediate(() => {
-      td.verify(onCreated({ record: {created: 1}, identifier: '123' }))
+      td.verify(onCreated({ record: {
+        something: 'foo',
+        created: 1
+      }, identifier: '123' }))
+      done()
+    })
+  })
+
+  it('emits updated event, with updated data from remote and local identifier', (done) => {
+    const ack = () => Promise.resolve()
+    const events = new EventEmitter()
+    const pipe = {
+      local: 'Local',
+      cleanse: x => Promise.resolve(x),
+      prepare: x => x
+    }
+    const upsert = () => Promise.resolve()
+    const remote = { update: td.function() }
+    td.when(remote.update({something: 'foo'}, undefined)).thenResolve({created: 1})
+    tap(events, pipe, upsert, remote, ack, log, syncEvents)
+    const onUpdated = td.function()
+    syncEventsEmitter.on(SyncEvents.UPDATED, onUpdated)
+    events.emit('Local:update', {payload: {data: {
+      something: 'foo'
+    }, identifier: '123'}})
+    setImmediate(() => {
+      td.verify(onUpdated({ record: {
+        something: 'foo',
+        created: 1
+      }, identifier: '123' }))
       done()
     })
   })
