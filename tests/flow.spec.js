@@ -10,7 +10,8 @@ describe('flow', () => {
     logger = {
       debug: td.function('debug'),
       error: td.function('error'),
-      info: td.function('info')
+      info: td.function('info'),
+      warn: td.function('warn')
     }
   })
 
@@ -18,7 +19,10 @@ describe('flow', () => {
     let started = false
     const findUpdated = td.function()
     const upsert = td.function()
-    const fakeStream = new Readable({read: () => null, objectMode: true})
+    const fakeStream = new Readable({
+      read: () => null,
+      objectMode: true
+    })
     fakeStream.push(null)
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
     flow({findUpdated, upsert, interval: 60000, logger})
@@ -42,6 +46,32 @@ describe('flow', () => {
       td.verify(upsert('REMOTE'))
       done()
     })
+  })
+
+  it('does not upsert records after encountering an error', (done) => {
+    const findUpdated = td.function()
+    const upsert = td.function()
+    const fakeStream = new Readable({
+      read: () => null,
+      destroy: (err, cb) => {
+        cb()
+      },
+      objectMode: true
+    })
+    fakeStream.push('REMOTE')
+    fakeStream.push('REMOTE2')
+    td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
+    td.when(upsert('REMOTE')).thenReject()
+    flow({findUpdated, upsert, interval: 60000, logger}).on(SyncEvents.SYNC_COMPLETE, () => {
+      expect(td.explain(upsert).callCount).to.equal(1)
+      expect(td.explain(logger.error).callCount).to.equal(1)
+      // console.log(td.explain(logger.warn))
+      // console.log(td.explain(upsert))
+      done()
+    })
+    setTimeout(() => {
+      fakeStream.push(null)
+    }, 20)
   })
 
   it('reports errors from the stream', (done) => {
