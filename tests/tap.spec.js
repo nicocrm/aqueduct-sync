@@ -27,7 +27,7 @@ describe('Tap', () => {
     events.emit('Local:create', {payload: { data: 'foo', meta: 'testmeta'}})
     setImmediate(() => {
       td.config({ignoreWarnings: true})
-      td.verify(remote.create('foo', 'testmeta'))
+      td.verify(remote.create('foo', 'testmeta', pipe))
       done()
     })
   })
@@ -136,7 +136,10 @@ describe('Tap', () => {
     }
     const upsert = () => Promise.resolve()
     const remote = { create: td.function() }
-    td.when(remote.create({something: 'foo'}, undefined)).thenResolve({created: 1})
+    td.when(remote.create({something: 'foo'}, undefined, td.matchers.contains({
+      local: 'Local'
+    })))
+      .thenResolve({created: 1})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
     const onCreated = td.function()
     syncEventsEmitter.on(SyncEvents.CREATED, onCreated)
@@ -162,7 +165,10 @@ describe('Tap', () => {
     }
     const upsert = () => Promise.resolve()
     const remote = { update: td.function() }
-    td.when(remote.update({something: 'foo'}, undefined)).thenResolve({created: 1})
+    td.when(remote.update({something: 'foo'}, undefined, td.matchers.contains({
+      local: 'Local'
+    })))
+      .thenResolve({created: 1})
     tap(events, pipe, upsert, remote, ack, log, syncEvents)
     const onUpdated = td.function()
     syncEventsEmitter.on(SyncEvents.UPDATED, onUpdated)

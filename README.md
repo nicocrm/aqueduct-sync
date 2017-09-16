@@ -186,8 +186,11 @@ Additionally if joints are used the following operations will be needed:
 
 The collections on this connection must implement:
 
- * create(record, metadata) - create a single record.  Return the updated record, which will include the generated key and the rev id.  May throw an error if the record already exists.
- * update(record, metadata) - update a single record, based on the key (specific to the collection / connection).  Throw an error if the record does not exist.  Returns updated record.
+ * create(record, metadata, pipe) - create a single record.  Return the updated record, which will include the generated key and the rev id.  May throw an error if the record already exists.
+    - `metadata` is passed from the create message payload - see [Queue](#queue)
+    - `pipe` is the original pipe configuration, but the `cleanse` / `prepare` methods may be enhanced on it.  Don't call them directly, because the sync process will already do that.
+ * update(record, metadata, pipe) - update a single record, based on the key (specific to the collection / connection).  Throw an error if the record does not exist.  Returns updated record.
+    - `metadata` and `pipe` are as for the `create` call
     - this does not have to do any conflict resolution here, because we'll handle it from the pipe
     - this can be a partial update, so if it is necessary for the remote API to have the full record they will need to retrieve it (e.g. as part of the `prepare` step)
  * remove(record, metadata) - remove a record, based on the key

@@ -224,8 +224,13 @@ describe('aqueduct', () => {
       // a promise that doesn't resolve so we don't try to pull stuff down
       td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
       td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
-      td.when(remote.Remote.create({field: 'bla bla bla'}, undefined)).thenResolve({field: 'result from create'})
-      td.when(pipe.cleanse({field: 'result from create'}, local)).thenReturn({field: 'cleansed result from create'})
+      td.when(remote.Remote.create({field: 'bla bla bla'}, undefined, td.matchers.contains({
+        // can't do an exact match, because the pipe will have been enhanced
+        remote: pipe.remote, local: pipe.local, fields: pipe.fields
+      })))
+        .thenResolve({field: 'result from create'})
+      td.when(pipe.cleanse({field: 'result from create'}, local))
+        .thenReturn({field: 'cleansed result from create'})
       local.Local.update = (rec, id) => {
         // td.verify(pipe.cleanse(local, {field: 'result from create'}))
         expect(rec).to.eql({field: 'cleansed result from create'})
