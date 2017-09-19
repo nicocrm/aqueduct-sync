@@ -168,7 +168,7 @@ The collections on this connection must implement:
 
  * `upsert(record)`: create or update a record, based on the record key (or composite key)
     - this can be a partial update: only the fields that are specified should be updated
-    - return a promise to an object with properties "inserted" and "updated" set to number of records affected respectively (these are used to trigger the events about the sync status)
+    - return a promise to an object with properties `inserted` and `updated` set to number of records affected respectively (these are used to trigger the events about the sync status), and a `record` property set to the record including its local keys populated
  * `update(record, identifierOrQuery)`: update a record using a local identifier
     - local identifier can be either the id passed with a local update message, or a selection query (an object of field: value), or it can be blank (in which case the selector should be extracted from the record)
     - this can update multiple records
