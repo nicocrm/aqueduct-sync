@@ -25,9 +25,15 @@ describe('flow', () => {
     })
     fakeStream.push(null)
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
-    flow({findUpdated, upsert, interval: 60000, logger})
-      .on(SyncEvents.SYNC_START, () => { started = true })
-      .on(SyncEvents.SYNC_COMPLETE, () => {
+    flow({local: 'foo', findUpdated, upsert, interval: 60000, logger})
+      .on(SyncEvents.SYNC_START, e => {
+        expect(e.local).to.equal('foo')
+        expect(e.source).to.equal('remote')
+        started = true
+      })
+      .on(SyncEvents.SYNC_COMPLETE, e => {
+        expect(e.local).to.equal('foo')
+        expect(e.source).to.equal('remote')
         expect(started).to.equal(true)
         done()
       })
