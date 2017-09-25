@@ -176,7 +176,8 @@ describe('aqueduct', () => {
       const msg = {payload: {type: 'Local', action: 'create', data: 'bla bla bla'}}
       td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
       td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
-      td.when(pipe.prepare('bla bla bla', 'create', local))
+      td.when(pipe.prepare('bla bla bla',
+        td.matchers.contains({action: 'create'}), local))
         .thenReturn({field: 'prepared data', other: 'something to discard'})
       local.Local.upsert = () => new Promise(() => null)
       remote.Remote.create = data => {
@@ -200,7 +201,7 @@ describe('aqueduct', () => {
       const msg = {payload: {type: 'Local', action: 'create', data: 'bla bla bla'}}
       td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
       td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
-      td.when(pipe.prepare('bla bla bla', 'create', local))
+      td.when(pipe.prepare('bla bla bla', td.matchers.contains({action: 'create'}), local))
         .thenResolve({field: 'prepared data', other: 'something to discard'})
       local.Local.upsert = () => new Promise(() => null)
       remote.Remote.create = data => {

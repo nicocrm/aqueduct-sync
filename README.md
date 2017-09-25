@@ -83,10 +83,10 @@ const pipe = {
     // finally sent to the remote update method
     // To cancel an update, throw an Error (the update will be reattempted)
     //   TODO: a way to cancel an update permanently.
-    prepare: function(rec, action, localConnection) {
+    prepare: function(record, {action, identifier}, localConnection) {
       return {
-        ...rec,
-        EstimatedAmount: rec.Amount
+        ...record,
+        EstimatedAmount: record.Amount
       }
     },
     // optional mapping of remote -> local field
