@@ -223,7 +223,7 @@ The messages must be objects with a `payload` property of the following format:
 
  * `action`: create, update, delete (delete is NOT implemented at this time)
  * `type`: the local entity name
- * `data`: the record data.  For an update this should be partial data, including only the fields that were changed.
+ * `data`: the record data.  For an update this should be partial data, including only the fields that were changed.  This can be passed as a plain object or a JSON string (which is useful when one wants to pass an update that includes dotted properties).
  * `identifier`: a local record identifier that will be passed to the upsert call
  * `meta`: optional metadata that will be passed unmodified to the create, update or remove method
 

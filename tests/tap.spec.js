@@ -52,6 +52,26 @@ describe('Tap', () => {
     events.emit('Local:update', {payload: { data: {field: 'foo'}, meta: 'testmeta' }})
   })
 
+  it('handles update events, when the data is passed as a JSON string', (done) => {
+    const ack = () => Promise.resolve()
+    const events = new EventEmitter()
+    const pipe = {
+      local: 'Local',
+      cleanse: x => Promise.resolve(x),
+      prepare: x => x
+    }
+    const upsert = () => Promise.resolve()
+    const remote = { update: td.function() }
+    remote.update = (rec, meta) => {
+      rec.should.eql({field: 'foo'})
+      meta.should.eql('testmeta')
+      done()
+      return Promise.resolve({})
+    }
+    tap(events, pipe, upsert, remote, ack, log, syncEvents)
+    events.emit('Local:update', {payload: { data: JSON.stringify({field: 'foo'}), meta: 'testmeta' }})
+  })
+
   it('resolve promise from prepare when updating records', (done) => {
     const ack = () => Promise.resolve()
     const events = new EventEmitter()
