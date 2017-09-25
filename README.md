@@ -76,7 +76,7 @@ const pipe = {
     // the record will have the "unmapped" (local) names: prepare happens BEFORE picking/mapping
     // it can return a cleaned record or a promise to one
     // the function will be invoked with the scope set to the pipe configuration object
-    // action will be "insert" or "update"
+    // action will be "create" or "update"
     // when this is called for an update, the data will contain only the values that are being
     // modified as part of that update
     // The result will be merged with the existing record, retrieved from the remote, before being
