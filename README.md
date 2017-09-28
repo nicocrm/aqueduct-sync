@@ -113,6 +113,7 @@ const pipe = {
       relatedListFields: ['']
     }],
     // optional interval in ms (defaults to 5 minutes)
+    // an interval of -1 disables the inbound sync.
     interval: 60000,
     // this defaults to true, but can be set to false to skip initially running the pipe
     runAtStartup: true
