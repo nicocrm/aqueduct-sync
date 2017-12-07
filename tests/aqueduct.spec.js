@@ -214,6 +214,28 @@ describe('aqueduct', () => {
       a.start()
     })
 
+    it('calls prepare and skip update if returned false', (done) => {
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        prepare: td.function(),
+        fields: ['field']
+      }
+      const msg = {payload: {type: 'Local', action: 'create', data: 'bla bla bla'}}
+      td.when(syncState.getSyncState('Local')).thenReturn(new Promise(() => null))
+      td.when(queue.get()).thenReturn(Promise.resolve(msg), Promise.resolve(undefined))
+      td.when(pipe.prepare('bla bla bla', td.matchers.contains({action: 'create'}), local))
+        .thenResolve(false)
+      local.Local.upsert = () => new Promise(() => null)
+      remote.Remote.create = data => {
+        done(new Error('should not be called'))
+      }
+      const a = new Aqueduct(remote, local, queue, syncState)
+      a.addPipe(pipe)
+      a.start()
+      setTimeout(done, 35)
+    })
+
     it('upserts on local connection with result of create', (done) => {
       const pipe = {
         remote: 'Remote',
