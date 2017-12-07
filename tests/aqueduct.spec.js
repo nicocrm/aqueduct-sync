@@ -160,6 +160,46 @@ describe('aqueduct', () => {
       a.start()
     })
 
+    it('skip local insert if cleanse returns false', (done) => {
+      const SYNC_STATE = 'sync-state'
+      const NEW_SYNC_STATE = 'new-sync-state'
+      const REMOTE_OBJ = { key: 'remote' }
+      const FIND_ARGS = { arg: 'something' }
+
+      const fakeStream = new Readable({read: () => null, objectMode: true})
+      fakeStream.push(REMOTE_OBJ)
+      fakeStream.push(null)
+      td.when(remote.Remote.findUpdated(SYNC_STATE, FIND_ARGS)).thenReturn(fakeStream)
+      remote.Remote.getRevId = (remoteObj, findArgs) => {
+        expect(remoteObj).to.eql(REMOTE_OBJ)
+        expect(findArgs).to.eql(FIND_ARGS)
+        return NEW_SYNC_STATE
+      }
+      // td.when(remote.Remote.getRevId(REMOTE_OBJ, FIND_ARGS)).thenReturn(NEW_SYNC_STATE)
+      const syncState = {
+        getSyncState: td.function(),
+        saveSyncState: td.function('saveSyncState')
+      }
+      td.when(syncState.getSyncState('Local')).thenReturn(Promise.resolve(SYNC_STATE))
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        findArgs: FIND_ARGS,
+        cleanse: x => false,
+        fields: ['key']
+      }
+      local.Local.upsert = function(rec) {
+        done(new Error('should not be called'))
+      }
+      const a = new Aqueduct(remote, local, queue, syncState)
+      a.addPipe(pipe)
+      a.on(SyncEvents.SYNC_COMPLETE, (evt) => {
+        expect(evt.local).to.equal('Local')
+        done()
+      })
+      a.start()
+    })
+
     it('starts tap and checks for queue message at interval', (done) => {
       const a = new Aqueduct({}, {}, queue, {})
       td.when(queue.get()).thenDo(done)
