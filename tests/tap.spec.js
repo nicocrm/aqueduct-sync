@@ -72,6 +72,24 @@ describe('Tap', () => {
     events.emit('Local:update', {payload: { data: JSON.stringify({field: 'foo'}), meta: 'testmeta' }})
   })
 
+  it('skip updates if prepare returns falsy', (done) => {
+    const ack = () => Promise.resolve()
+    const events = new EventEmitter()
+    const pipe = {
+      local: 'Local',
+      cleanse: x => x,
+      prepare: x => false
+    }
+    const upsert = () => Promise.resolve()
+    const remote = { update: td.function() }
+    remote.update = rec => {
+      done(new Error('should not be called'))
+    }
+    tap(events, pipe, upsert, remote, ack, log, syncEvents)
+    events.emit('Local:update', {payload: { data: {field: 'foo'} }})
+    setTimeout(() => done(), 50)
+  })
+
   it('resolve promise from prepare when updating records', (done) => {
     const ack = () => Promise.resolve()
     const events = new EventEmitter()

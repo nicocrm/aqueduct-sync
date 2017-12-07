@@ -167,9 +167,14 @@ service.find(...)
 
 The collections on this connection must implement:
 
+For inbound sync:
+
  * `upsert(record)`: create or update a record, based on the record key (or composite key)
     - this can be a partial update: only the fields that are specified should be updated
     - return a promise to an object with properties `inserted` and `updated` set to number of records affected respectively (these are used to trigger the events about the sync status), and a `record` property set to the record including its local keys populated
+
+For outbound sync:
+
  * `update(record, identifierOrQuery)`: update a record using a local identifier
     - local identifier can be either the id passed with a local update message, or a selection query (an object of field: value), or it can be blank (in which case the selector should be extracted from the record)
     - this can update multiple records
@@ -183,9 +188,14 @@ Additionally if joints are used the following operations will be needed:
  * addOrUpdateChildInCollection
  * removeChildFromCollection
 
+If the sync is only used in one direction then the methods for the other direction need not be
+implemented.
+
 ### Remote Connection
 
 The collections on this connection must implement:
+
+For outbound sync:
 
  * create(record, metadata, pipe) - create a single record.  Return the updated record, which will include the generated key and the rev id.  May throw an error if the record already exists.
     - `metadata` is passed from the create message payload - see [Queue](#queue)
@@ -195,6 +205,9 @@ The collections on this connection must implement:
     - this does not have to do any conflict resolution here, because we'll handle it from the pipe
     - this can be a partial update, so if it is necessary for the remote API to have the full record they will need to retrieve it (e.g. as part of the `prepare` step)
  * remove(record, metadata) - remove a record, based on the key
+
+For inbound sync:
+
  * getRevId(record) - retrieve the rev id for the record, used to identify updated records
  * findUpdated(revId) - retrieve records (as a stream of objects) that have been updated since the given rev id
  * compareRevId(record1, record2) - compare the rev id between the 2 records and return a value:
@@ -211,6 +224,8 @@ This parameter is an object which must implement:
 
 The sync state is an opaque object, that will be passed to the remote connection to determine
 records that need syncing.
+
+If the sync is strictly outbound, then sync state is not required and can be passed as a null.
 
 ## Queue
 
