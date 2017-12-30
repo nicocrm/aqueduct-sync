@@ -439,5 +439,20 @@ describe('aqueduct', () => {
         expect(result).to.eql({newkey: 'something'})
       })
     })
+
+    it('uses property paths in field map', () => {
+      const pipe = {
+        remote: 'Remote',
+        local: 'Local',
+        cleanse: null,
+        fields: ['key'],
+        map: {key: 'new.key'}
+      }
+      const a = new Aqueduct()
+      a.addPipe(pipe)
+      return a.pipes[0].cleanse({key: 'something'}).then(result => {
+        expect(result).to.eql({'new': { key: 'something'} })
+      })
+    })
   })
 })
