@@ -445,13 +445,12 @@ describe('aqueduct', () => {
         remote: 'Remote',
         local: 'Local',
         cleanse: null,
-        fields: ['key'],
-        map: {key: 'new.key'}
+        map: {'old.key': 'new.key'}
       }
       const a = new Aqueduct()
       a.addPipe(pipe)
-      return a.pipes[0].cleanse({key: 'something'}).then(result => {
-        expect(result).to.eql({'new': { key: 'something'} })
+      return a.pipes[0].cleanse({old: { key: 'something' } }).then(result => {
+        expect(result).to.eql({'new': { key: 'something' } })
       })
     })
   })
