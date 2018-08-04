@@ -92,6 +92,8 @@ const pipe = {
     // optional mapping of remote -> local field
     // this mapping will be performed BEFORE the cleanse function and AFTER the prepare function
     // nested fields can be specified using a dotted path
+    // if the Local Name is instead specified as `false` the field will be removed from the remote
+    // object
     map: {
       RemoteField: 'Local Name'
     },
