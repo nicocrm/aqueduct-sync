@@ -11,7 +11,7 @@ describe('flow', () => {
       debug: td.function('debug'),
       error: td.function('error'),
       info: td.function('info'),
-      warn: td.function('warn')
+      warn: td.function('warn'),
     }
   })
 
@@ -21,17 +21,17 @@ describe('flow', () => {
     const upsert = td.function()
     const fakeStream = new Readable({
       read: () => null,
-      objectMode: true
+      objectMode: true,
     })
     fakeStream.push(null)
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
     flow({local: 'foo', findUpdated, upsert, interval: 60000, logger})
-      .on(SyncEvents.SYNC_START, e => {
+      .on(SyncEvents.SYNC_START, (e) => {
         expect(e.local).to.equal('foo')
         expect(e.source).to.equal('remote')
         started = true
       })
-      .on(SyncEvents.SYNC_COMPLETE, e => {
+      .on(SyncEvents.SYNC_COMPLETE, (e) => {
         expect(e.local).to.equal('foo')
         expect(e.source).to.equal('remote')
         expect(started).to.equal(true)
@@ -48,10 +48,13 @@ describe('flow', () => {
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
     td.when(upsert('REMOTE')).thenResolve()
     td.config({ignoreWarnings: true})
-    flow({findUpdated, upsert, interval: 60000, logger}).on(SyncEvents.SYNC_COMPLETE, () => {
-      td.verify(upsert('REMOTE'))
-      done()
-    })
+    flow({findUpdated, upsert, interval: 60000, logger}).on(
+      SyncEvents.SYNC_COMPLETE,
+      () => {
+        td.verify(upsert('REMOTE'))
+        done()
+      }
+    )
   })
 
   it('does not upsert records after encountering an error', (done) => {
@@ -59,25 +62,53 @@ describe('flow', () => {
     const upsert = td.function()
     const fakeStream = new Readable({
       read: () => null,
-      destroy: (err, cb) => {
-        cb()
+      destroy: function () {
+        this.push(null)
       },
-      objectMode: true
+      objectMode: true,
     })
     fakeStream.push('REMOTE')
     fakeStream.push('REMOTE2')
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
     td.when(upsert('REMOTE')).thenReject()
-    flow({findUpdated, upsert, interval: 60000, logger}).on(SyncEvents.SYNC_COMPLETE, () => {
-      expect(td.explain(upsert).callCount).to.equal(1)
-      expect(td.explain(logger.error).callCount).to.equal(1)
-      // console.log(td.explain(logger.warn))
-      // console.log(td.explain(upsert))
-      done()
+    flow({findUpdated, upsert, interval: 60000, logger}).on(
+      SyncEvents.SYNC_COMPLETE,
+      () => {
+        expect(td.explain(upsert).callCount).to.equal(1)
+        expect(td.explain(logger.error).callCount).to.equal(1)
+        // console.log(td.explain(logger.warn))
+        // console.log(td.explain(upsert))
+        done()
+      }
+    )
+    // EOS
+    // not necessary since we'll destroy the stream
+    // setTimeout(() => {
+    //   fakeStream.push(null)
+    // }, 20)
+  })
+
+  it('upserts re-read records', (done) => {
+    const findUpdated = td.function()
+    const upsert = td.function()
+    td.when(upsert({id: 1})).thenResolve()
+    const flowEvents = flow({
+      findUpdated,
+      upsert,
+      interval: -1,
+      logger,
+      runNow: false,
     })
+    flowEvents.emit(SyncEvents.REREAD, {record: {id: 1}})
     setTimeout(() => {
-      fakeStream.push(null)
+      expect(td.explain(upsert).callCount).to.equal(1)
+      done()
     }, 20)
+    // EOS
+    // not necessary since we'll destroy the stream
+    // setTimeout(() => {
+    //   fakeStream.push(null)
+    // }, 20)
   })
 
   it('reports errors from the stream', (done) => {
@@ -87,12 +118,20 @@ describe('flow', () => {
     const fakeStream = new Readable({read: () => null, objectMode: true})
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
     td.config({ignoreWarnings: true})
-    flow({findUpdated, upsert, interval: 60000, logger}).on(SyncEvents.SYNC_COMPLETE, () => {
-      td.verify(logger.error("Error reading records", td.matchers.contains({message: "AAAA"})))
-      done()
-    })
+    flow({findUpdated, upsert, interval: 60000, logger}).on(
+      SyncEvents.SYNC_COMPLETE,
+      () => {
+        td.verify(
+          logger.error(
+            'Error reading records',
+            td.matchers.contains({message: 'AAAA'})
+          )
+        )
+        done()
+      }
+    )
     // need a little timeout, because the flow will run the sync using setImmediate
-    setTimeout(function() {
+    setTimeout(function () {
       fakeStream.emit('error', new Error('AAAA'))
       fakeStream.push(null)
     }, 10)
@@ -107,10 +146,18 @@ describe('flow', () => {
     td.when(findUpdated()).thenReturn(Promise.resolve(fakeStream))
     td.when(upsert('REMOTE')).thenReject(new Error('AAAA'))
     td.config({ignoreWarnings: true})
-    flow({findUpdated, upsert, interval: 60000, logger}).on(SyncEvents.SYNC_COMPLETE, () => {
-      td.verify(logger.error("Error upserting record", td.matchers.contains({message: "AAAA"})))
-      done()
-    })
+    flow({findUpdated, upsert, interval: 60000, logger}).on(
+      SyncEvents.SYNC_COMPLETE,
+      () => {
+        td.verify(
+          logger.error(
+            'Error upserting record',
+            td.matchers.contains({message: 'AAAA'})
+          )
+        )
+        done()
+      }
+    )
   })
 
   it('runs a sync when SYNC_START event is received', (done) => {
@@ -124,16 +171,19 @@ describe('flow', () => {
     }
     td.config({ignoreWarnings: true})
     let numRun = 0
-    const myFlow = flow({findUpdated, upsert, interval: 60000, logger}).on(SyncEvents.SYNC_COMPLETE, () => {
-      numRun++
-      if(numRun == 2) {
-        done()
-      } else {
-        setTimeout(function() {
-          myFlow.emit(SyncEvents.SYNC_START)
-        })
+    const myFlow = flow({findUpdated, upsert, interval: 60000, logger}).on(
+      SyncEvents.SYNC_COMPLETE,
+      () => {
+        numRun++
+        if (numRun === 2) {
+          done()
+        } else {
+          setTimeout(function () {
+            myFlow.emit(SyncEvents.SYNC_START)
+          })
+        }
       }
-    })
+    )
   })
 
   it('does not run sync at start, when runNow is false', (done) => {
@@ -148,13 +198,18 @@ describe('flow', () => {
   it('does not run 2 syncs at the same time', (done) => {
     let counter = 0
     const findUpdated = () => {
-      if(counter === 1)
-        throw new Error('Should not run sync!')
+      if (counter === 1) throw new Error('Should not run sync!')
       counter++
       return new Promise(() => null)
     }
     const upsert = () => null
-    const myFlow = flow({findUpdated, upsert, interval: 60000, logger, runNow: true})
+    const myFlow = flow({
+      findUpdated,
+      upsert,
+      interval: 60000,
+      logger,
+      runNow: true,
+    })
     setTimeout(() => {
       myFlow.emit(SyncEvents.SYNC_START)
     }, 50)
@@ -164,8 +219,7 @@ describe('flow', () => {
   it('runs sync at scheduled interval', (done) => {
     let counter = 0
     const findUpdated = () => {
-      if(counter === 1)
-        done()
+      if (counter === 1) done()
       counter++
       const fakeStream = new Readable({read: () => null, objectMode: true})
       setTimeout(() => {
@@ -174,14 +228,19 @@ describe('flow', () => {
       return Promise.resolve(fakeStream)
     }
     const upsert = () => null
-    const myFlow = flow({findUpdated, upsert, interval: 50, logger, runNow: true})
+    flow({
+      findUpdated,
+      upsert,
+      interval: 50,
+      logger,
+      runNow: true,
+    })
   })
 
   it('runs sync at scheduled interval, when not running at start', (done) => {
     let counter = 0
     const findUpdated = () => {
-      if(counter === 1)
-        done()
+      if (counter === 1) done()
       counter++
       const fakeStream = new Readable({read: () => null, objectMode: true})
       setTimeout(() => {
@@ -190,7 +249,12 @@ describe('flow', () => {
       return Promise.resolve(fakeStream)
     }
     const upsert = () => null
-    const myFlow = flow({findUpdated, upsert, interval: 50, logger, runNow: false})
+    flow({
+      findUpdated,
+      upsert,
+      interval: 50,
+      logger,
+      runNow: false,
+    })
   })
-
 })

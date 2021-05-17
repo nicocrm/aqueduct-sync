@@ -133,7 +133,7 @@ const faucet = {
   interval: 60000,
   // this defaults to true, but can be set to false to skip initially running the pipe
   runAtStartup: true
-  // identifier for the sync state, and used in log messages
+  // identifier for the sync state, and used in log messages (and as identifier in reread events)
   // this does not need to be a valid local connection
   local: 'MyFaucet',
   // name of remote collection to be checked
@@ -145,6 +145,8 @@ const faucet = {
     // take action with the received record.
     // if this function returns a string, it will be interpreted as the name
     // of a pipe to run the flow (inbound sync) for
+    // if it returns a number, the record will be re-processed after that many seconds (using a
+    // "reread" event)
     // a given pipe will be triggered only once per invocation of the faucet
   }
 }
@@ -222,7 +224,10 @@ For inbound sync:
 This parameter is an object which must implement:
 
  * getSyncState(entity): retrieve a promise resolving to the sync state for that entity (local name)
- * saveSyncState(entity, syncState): save the sync state for the entity (local name).  Return a promise.  We update the sync state when records are synced from the remote, not when they are written from the local to the remote, to avoid race conditions.
+ * saveSyncState(entity, syncState): save the sync state for the entity (local name).  Return a
+   promise.  We update the sync state when records are synced from the remote, not when they are
+   written from the local to the remote, to avoid race conditions.  Care must be taken not to update
+   the sync state backward, in case records are synced out of order.
 
 The sync state is an opaque object, that will be passed to the remote connection to determine
 records that need syncing.
@@ -239,7 +244,8 @@ The queue object is an object which must implement this API:
 
 The messages must be objects with a `payload` property of the following format:
 
- * `action`: create, update, delete (delete is NOT implemented at this time)
+ * `action`: create, update, delete, reread (delete is NOT implemented at this time, and reread is
+   used for local events that could not be processed by a faucet and need to be re-processed later)
  * `type`: the local entity name
  * `data`: the record data.  For an update this should be partial data, including only the fields that were changed.  This can be passed as a plain object or a JSON string (which is useful when one wants to pass an update that includes dotted properties).
  * `identifier`: a local record identifier that will be passed to the upsert call
@@ -251,11 +257,12 @@ Note this API is a promisified version of a subset of methods from [mongodb-queu
 
 The aqueduct instance will emit the following events:
 
- * `Aqueduct.SyncEvents.SYNC_COMPLETED`: a scheduled sync has completed (for the specified entity)
+ * `Aqueduct.SyncEvents.SYNC_COMPLETE`: a scheduled sync has completed (for the specified entity)
  * `Aqueduct.SyncEvents.SYNC_START`: a scheduled sync has started (for the specified entity)
  * `Aqueduct.SyncEvents.UPDATED`
  * `Aqueduct.SyncEvents.CREATED`
  * `Aqueduct.SyncEvents.DELETED`
+ * `Aqueduct.SyncEvents.REREAD`
  * `Aqueduct.SyncEvents.UPSERT_RESULT`: a record was upserted - will be provided the result from the upsert function as a `result` property
 
 Events will have the following parameters:
@@ -269,7 +276,7 @@ These events can be automatically filtered, by passing a filter as first paramet
 
 ```
 // a function to run when a flow completes
-aq.on({source: 'remote'}, Aqueduct.SyncEvents.SYNC_COMPLETED, function() { ... })
+aq.on({source: 'remote'}, Aqueduct.SyncEvents.SYNC_COMPLETE, function() { ... })
 // a function to run when a ticket was synced from the local collection
 aq.on({local: 'Tickets', source: 'local'}, Aqueduct.SyncEvents.CREATED, function() { ... })
 ```
